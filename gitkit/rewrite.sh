@@ -8,20 +8,24 @@ set -euo pipefail
 # ──────────────────────────────────────────────────────────────
 
 usage() {
-  echo "Usage: $0 -n <new_name> -e <new_email> -o <old_emails_comma_separated>"
+  echo "Usage: $0 -n <new_name> -e <new_email> -o <old_emails_comma_separated> [-O <old_name>]"
   echo "  -n: New author and committer name"
   echo "  -e: New author and committer email"
   echo "  -o: Comma-separated list of old emails to replace"
+  echo "  -O: (Optional) Old author and committer name to replace"
   exit 1
 }
 
-while getopts ":n:e:o:" opt; do
+OLD_NAME=""
+while getopts ":n:e:o:O:" opt; do
   case $opt in
     n) NEW_NAME="$OPTARG"
     ;;
     e) NEW_EMAIL="$OPTARG"
     ;;
     o) IFS=',' read -r -a OLD_EMAILS <<< "$OPTARG"
+    ;;
+    O) OLD_NAME="$OPTARG"
     ;;
     \?) echo "Invalid option -$OPTARG" >&2; usage
     ;;
@@ -49,6 +53,7 @@ for repo in */.git; do
 import re
 old_emails = {$(printf "'%s':1," "${OLD_EMAILS[@]}")}
 old_emails = {k.lower(): v for k, v in old_emails.items()}
+old_name_to_check = b'$OLD_NAME'.decode().lower() if b'$OLD_NAME' else None
 
 def lower(s):
     try:
@@ -60,20 +65,24 @@ changed = False
 
 # Author check
 a_email = lower(commit.author_email)
-if a_email in old_emails:
-    old = commit.author_email.decode()
+a_name = lower(commit.author_name)
+if a_email in old_emails and (not old_name_to_check or a_name == old_name_to_check):
+    old_a_name = commit.author_name.decode()
+    old_a_email = commit.author_email.decode()
     commit.author_name = b'$NEW_NAME'
     commit.author_email = b'$NEW_EMAIL'
-    print(f'[Author] {old}  →  $NEW_EMAIL')
+    print(f'[Author] {old_a_name} <{old_a_email}>  →  $NEW_NAME <$NEW_EMAIL>')
     changed = True
 
 # Committer check
 c_email = lower(commit.committer_email)
-if c_email in old_emails:
-    old = commit.committer_email.decode()
+c_name = lower(commit.committer_name)
+if c_email in old_emails and (not old_name_to_check or c_name == old_name_to_check):
+    old_c_name = commit.committer_name.decode()
+    old_c_email = commit.committer_email.decode()
     commit.committer_name = b'$NEW_NAME'
     commit.committer_email = b'$NEW_EMAIL'
-    print(f'[Committer] {old}  →  $NEW_EMAIL')
+    print(f'[Committer] {old_c_name} <{old_c_email}>  →  $NEW_NAME <$NEW_EMAIL>')
     changed = True
 
 # Remove trace lines if commit changed

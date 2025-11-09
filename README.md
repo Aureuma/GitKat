@@ -37,7 +37,7 @@ Rewrites commit history across multiple repositories to unify author identity.
   ```
 - **How to run:**
   ```sh
-  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com,old2@email.com"
+  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com,old2@email.com" -O "Old Name"
   ```
   > **Warning:** This script rewrites Git history. After verifying the changes, you will need to force-push.
 
