@@ -13,7 +13,7 @@ Audits the commit history of all local repositories.
 - **What it does:** Scans all subdirectories for Git repositories and checks the commit logs for a specific author or committer name provided as an argument.
 - **How to run:**
   ```sh
-  ./gitkit/check.sh "<name_to_check>"
+  ./gitkit/check.sh "My Old Name"
   ```
 
 ### `report.sh`
@@ -36,8 +36,16 @@ Rewrites commit history across multiple repositories to unify author identity.
   brew install git-filter-repo
   ```
 - **How to run:**
+  
+  **Basic Usage:**
   ```sh
-  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com,old2@email.com" -O "Old Name"
+  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com,old2@email.com"
+  ```
+  
+  **With Optional Old Name Filter:**
+  To only rewrite commits from a specific author name matching the old emails, use the `-O` flag:
+  ```sh
+  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com" -O "Old Name"
   ```
   > **Warning:** This script rewrites Git history. After verifying the changes, you will need to force-push.
 
