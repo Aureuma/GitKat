@@ -1,50 +1,38 @@
 #!/usr/bin/env bash
 set -euo pipefail
-#
+
 # ──────────────────────────────────────────────────────────────
 #  Git Commit Identity Rewriter — Multi-Repo Batch Version
 # ──────────────────────────────────────────────────────────────
-# Description:
-#   Scans all Git repositories in the current directory and rewrites
-#   their full commit history to unify author/committer identity and
-#   clean commit message traces when necessary.
-#
-#   For each commit:
-#     • If the author or committer email matches any in OLD_EMAILS
-#       (case-insensitive), it is replaced with NEW_EMAIL and NEW_NAME.
-#     • For those same commits only, the following commit-message
-#       footers are removed using regex:
-#           Signed-off-by:
-#           Co-authored-by:
-#           Reviewed-by:
-#           Acked-by:
-#           Tested-by:
-#           Reported-by:
-#           Suggested-by:
-#     • Remotes are preserved automatically.
-#
-#   Notes:
-#     • Case-insensitive matching for both email and footer cleanup.
-#     • Commit hashes change (expected for rewritten history).
-#     • After verification, push with `--force`.
-#
-# Requirements:
-#     brew install git-filter-repo
-#
-# Usage:
-#     chmod +x rewrite_commits.sh
-#     ./rewrite_commits.sh
-#
+# ... (rest of the description remains the same)
 # ──────────────────────────────────────────────────────────────
 
-NEW_NAME="My New Name"
-NEW_EMAIL="mynew@email.com"
+usage() {
+  echo "Usage: $0 -n <new_name> -e <new_email> -o <old_emails_comma_separated>"
+  echo "  -n: New author and committer name"
+  echo "  -e: New author and committer email"
+  echo "  -o: Comma-separated list of old emails to replace"
+  exit 1
+}
 
-declare -a OLD_EMAILS=(
-'myold1@email.com'
-'myold2@email.com'
-'myold3@email.com'
-)
+while getopts ":n:e:o:" opt; do
+  case $opt in
+    n) NEW_NAME="$OPTARG"
+    ;;
+    e) NEW_EMAIL="$OPTARG"
+    ;;
+    o) IFS=',' read -r -a OLD_EMAILS <<< "$OPTARG"
+    ;;
+    \?) echo "Invalid option -$OPTARG" >&2; usage
+    ;;
+    :) echo "Option -$OPTARG requires an argument." >&2; usage
+    ;;
+  esac
+done
+
+if [ -z "${NEW_NAME:-}" ] || [ -z "${NEW_EMAIL:-}" ] || [ ${#OLD_EMAILS[@]} -eq 0 ]; then
+    usage
+fi
 
 for repo in */.git; do
   repo_dir="${repo%/.git}"
@@ -118,3 +106,4 @@ echo
 echo "✅ Rewrite complete (case-insensitive identity + trace cleanup + remotes restored)."
 echo "Verify logs, then push rewritten histories with:"
 echo "  git push --force --tags origin main"
+

@@ -36,12 +36,9 @@ Rewrites commit history across multiple repositories to unify author identity.
   brew install git-filter-repo
   ```
 - **How to run:**
-  1.  Configure the `NEW_NAME`, `NEW_EMAIL`, and `OLD_EMAILS` variables inside the script.
-  2.  Make the script executable: `chmod +x ./gitkit/rewrite.sh`
-  3.  Run the script:
-      ```sh
-      ./gitkit/rewrite.sh
-      ```
+  ```sh
+  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com,old2@email.com"
+  ```
   > **Warning:** This script rewrites Git history. After verifying the changes, you will need to force-push.
 
 ### `push.sh`
