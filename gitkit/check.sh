@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ -z "$1" ]; then
+  echo "Usage: $0 <name_to_check>"
+  exit 1
+fi
+
+NAME_TO_CHECK="$1"
+
 # Loop through all directories containing a .git folder
 for repo in */.git; do
   repo_dir="$(dirname "$repo")"
@@ -8,9 +15,9 @@ for repo in */.git; do
 
   cd "$repo_dir"
 
-  # Use git log to search author or committer names containing 'My Old Name'
-  if git log --all --pretty='%an <%ae>%n%cn <%ce>' | grep -i 'My Old Name' >/dev/null; then
-    echo "Found commits with 'My Old Name' in author or committer fields."
+  # Use git log to search author or committer names containing '$NAME_TO_CHECK'
+  if git log --all --pretty='%an <%ae>%n%cn <%ce>' | grep -i "$NAME_TO_CHECK" >/dev/null; then
+    echo "Found commits with '$NAME_TO_CHECK' in author or committer fields."
   else
     echo "Nothing."
   fi

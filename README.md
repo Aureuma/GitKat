@@ -10,10 +10,10 @@ A collection of scripts for managing and auditing Git repositories in bulk.
 
 Audits the commit history of all local repositories.
 
-- **What it does:** Scans all subdirectories for Git repositories and checks the commit logs for a specific author or committer name (`My Old Name` by default).
+- **What it does:** Scans all subdirectories for Git repositories and checks the commit logs for a specific author or committer name provided as an argument.
 - **How to run:**
   ```sh
-  ./gitkit/check.sh
+  ./gitkit/check.sh "<name_to_check>"
   ```
 
 ### `report.sh`
