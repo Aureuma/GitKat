@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Git history rewriter for identity metadata and blob data (case-preserving).
+# Git history rewriter for identity metadata and blob data.
 # - Identity: replace author/committer name/email when matched (case-insensitive match; uses provided casing).
-# - Blob data: replace within tree objects without word boundaries; matches are case-insensitive but replacements mirror matched casing.
+# - Blob data: replace within tree objects without word boundaries; matching can be case-sensitive or insensitive; replacements can optionally mirror matched casing.
 
 usage() {
   cat <<'EOF'
-Usage: rewrite.sh [-n <new_name>] [-e <new_email>] [-o <old_emails_comma_separated>] [-O <old_name>] [-m <old:new>]...
+Usage: rewrite.sh [-n <new_name>] [-e <new_email>] [-o <old_emails_comma_separated>] [-O <old_name>] [-m <old:new>] [--preserve-case] [--ignore-case|-i]
   -n  New author/committer name (applied when identity matches)
   -e  New author/committer email (required with -o)
   -o  Comma-separated list of old emails to match for identity rewrites
   -O  Optional old author/committer name to require for identity rewrites
-  -m  Blob data replacement mapping in the form old:new (repeatable, case-preserving, no word boundaries)
+  -m  Blob data replacement mapping in the form old:new (repeatable, no word boundaries)
+  --preserve-case    Mirror matched casing onto replacements (blob data only)
+  --ignore-case, -i  Apply blob replacements case-insensitively (default is case-sensitive for blob data)
 Examples:
   rewrite.sh -n "Jane Example" -e jane@new.com -o old@ex.com -m foo:bar -m olddomain.com:newdomain.com
   rewrite.sh -m secret:REDACTED
@@ -25,16 +27,46 @@ NEW_EMAIL=""
 OLD_NAME=""
 OLD_EMAILS=()
 BLOB_MAP=()
+PRESERVE_CASE=0
+IGNORE_CASE=0
 
-while getopts ":n:e:o:O:m:h" opt; do
-  case $opt in
-    n) NEW_NAME="$OPTARG" ;;
-    e) NEW_EMAIL="$OPTARG" ;;
-    o) IFS=',' read -r -a OLD_EMAILS <<< "$OPTARG" ;;
-    O) OLD_NAME="$OPTARG" ;;
-    m) BLOB_MAP+=("$OPTARG") ;;
-    h|\?) usage ;;
-    :) echo "Option -$OPTARG requires an argument." >&2; usage ;;
+require_arg() {
+  if [ $# -lt 2 ] || [[ "$2" == -* ]]; then
+    echo "Option $1 requires an argument." >&2
+    usage
+  fi
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -n)
+      require_arg "$1" "${2:-}"
+      NEW_NAME="$2"; shift 2 ;;
+    -e)
+      require_arg "$1" "${2:-}"
+      NEW_EMAIL="$2"; shift 2 ;;
+    -o)
+      require_arg "$1" "${2:-}"
+      IFS=',' read -r -a OLD_EMAILS <<< "$2"; shift 2 ;;
+    -O)
+      require_arg "$1" "${2:-}"
+      OLD_NAME="$2"; shift 2 ;;
+    -m)
+      require_arg "$1" "${2:-}"
+      BLOB_MAP+=("$2"); shift 2 ;;
+    --preserve-case)
+      PRESERVE_CASE=1; shift ;;
+    --ignore-case|-i)
+      IGNORE_CASE=1; shift ;;
+    -h|--help)
+      usage ;;
+    --)
+      shift; break ;;
+    -*)
+      echo "Unknown option $1" >&2
+      usage ;;
+    *)
+      break ;;
   esac
 done
 
@@ -81,6 +113,8 @@ for repo in */.git; do
   GITKIT_OLD_NAME="$OLD_NAME" \
   GITKIT_OLD_EMAILS="$OLD_EMAILS_SERIALIZED" \
   GITKIT_BLOB_MAP="$BLOB_SERIALIZED" \
+  GITKIT_PRESERVE_CASE="$PRESERVE_CASE" \
+  GITKIT_IGNORE_CASE="$IGNORE_CASE" \
   git filter-repo --force \
     --commit-callback '
 import os
@@ -141,6 +175,8 @@ import os
 import re
 
 raw_pairs = [line for line in os.environ.get("GITKIT_BLOB_MAP", "").splitlines() if line]
+ignore_case = os.environ.get("GITKIT_IGNORE_CASE", "0") == "1"
+preserve_case_enabled = os.environ.get("GITKIT_PRESERVE_CASE", "0") == "1"
 if not raw_pairs:
     return
 
@@ -154,7 +190,8 @@ for line in raw_pairs:
 if not pairs:
     return
 
-patterns = [(re.compile(re.escape(old), re.IGNORECASE), new) for old, new in pairs]
+re_flags = re.IGNORECASE if ignore_case else 0
+patterns = [(re.compile(re.escape(old), re_flags), new) for old, new in pairs]
 
 def preserve_case(match, replacement):
     # Mirror the matched casing pattern onto the replacement.
@@ -187,7 +224,10 @@ if b"\0" in blob.data:
 
 data = blob.data
 for pattern, replacement in patterns:
-    data, _ = pattern.subn(lambda m, r=replacement: preserve_case(m, r), data)
+    if preserve_case_enabled:
+        data, _ = pattern.subn(lambda m, r=replacement: preserve_case(m, r), data)
+    else:
+        data, _ = pattern.subn(replacement, data)
 
 blob.data = data
 '

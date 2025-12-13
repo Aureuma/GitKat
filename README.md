@@ -30,7 +30,7 @@ Generates a report of all unique author emails found in the commit history of lo
 
 Rewrites commit history across multiple repositories to unify author identity and optionally rewrite blob data.
 
-- **What it does:** Uses `git-filter-repo` to replace author/committer names and emails when matched, cleans commit message footers like `Signed-off-by:`, and can rewrite blob contents with case-preserving substitutions (no word boundaries; text blobs only).
+- **What it does:** Uses `git-filter-repo` to replace author/committer names and emails when matched, cleans commit message footers like `Signed-off-by:`, and can rewrite blob contents with optional case-preserving substitutions (no word boundaries; text blobs only, case-sensitive by default).
 - **Prerequisites:** Requires `git-filter-repo`. Install it with Homebrew:
   ```sh
   brew install git-filter-repo
@@ -52,6 +52,11 @@ Rewrites commit history across multiple repositories to unify author identity an
   ./gitkit/rewrite.sh -m olddomain.com:newdomain.com -m SecretToken:REDACTED
   ```
 
+  **Case-insensitive blob rewrite with preserved casing:**
+  ```sh
+  ./gitkit/rewrite.sh -m foo:bar -m oldid:NEWID --ignore-case --preserve-case
+  ```
+
   **Combine identity + blob rewrites:**
   ```sh
   ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old@email.com" \
@@ -59,7 +64,8 @@ Rewrites commit history across multiple repositories to unify author identity an
   ```
 
   Notes:
-  - Blob replacements are case-insensitive matches but mirror the matched casing in the result.
+  - Blob replacements are case-sensitive by default; add `--ignore-case`/`-i` to match case-insensitively.
+  - Add `--preserve-case` to mirror the matched casing onto the replacement.
   - Blob rewrites skip binary blobs (detected by NUL bytes).
   - Identity rewrites use the exact casing you provide for `-n/-e`.
 
