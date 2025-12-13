@@ -6,6 +6,7 @@ set -euo pipefail
 # - Blob data: replace within tree objects without word boundaries.
 #   * Matching: case-sensitive by default; add --ignore-case to match all casings.
 #   * Replacements: add --preserve-case to mirror each match's casing onto the replacement (works with or without --ignore-case).
+#   * Reporting: emits colored per-file replacement logs (path in pink, matches in red, replacements in blue with nearby context).
 
 usage() {
   cat <<'EOF'
@@ -185,6 +186,11 @@ import re
 raw_pairs = [line for line in os.environ.get("GITKIT_BLOB_MAP", "").splitlines() if line]
 ignore_case = os.environ.get("GITKIT_IGNORE_CASE", "0") == "1"
 preserve_case_enabled = os.environ.get("GITKIT_PRESERVE_CASE", "0") == "1"
+CTX = 30
+COLOR_PATH = "\033[95m"   # pink for file paths
+COLOR_MATCH = "\033[31m"  # red for matches
+COLOR_REPL = "\033[34m"   # blue for replacements
+COLOR_RESET = "\033[0m"
 if not raw_pairs:
     return
 
@@ -231,11 +237,41 @@ if b"\0" in blob.data:
     return
 
 data = blob.data
+path_bytes = getattr(blob, "path", None) or getattr(blob, "original_path", None) or b""
+path_str = path_bytes.decode("utf-8", "ignore") or "<unknown path>"
+
+def decode_snippet(b):
+    return b.decode("utf-8", "replace")
+
+def log_replacement(start, end, match_bytes, repl_bytes, snapshot):
+    pre_start = max(0, start - CTX)
+    post_end = min(len(snapshot), end + CTX)
+    prefix = decode_snippet(snapshot[pre_start:start])
+    suffix = decode_snippet(snapshot[end:post_end])
+    match_str = decode_snippet(match_bytes)
+    repl_str = decode_snippet(repl_bytes)
+    print(f"  ...{prefix}{COLOR_MATCH}{match_str}{COLOR_RESET}{suffix} -> ...{prefix}{COLOR_REPL}{repl_str}{COLOR_RESET}{suffix}")
+
+printed_path = False
 for pattern, replacement in patterns:
-    if preserve_case_enabled:
-        data, _ = pattern.subn(lambda m, r=replacement: preserve_case(m, r), data)
-    else:
-        data, _ = pattern.subn(replacement, data)
+    matches = list(pattern.finditer(data))
+    if not matches:
+        continue
+
+    snapshot = data
+    new_data = bytearray()
+    last = 0
+    for m in matches:
+        repl_bytes = preserve_case(m, replacement) if preserve_case_enabled else replacement
+        new_data.extend(snapshot[last:m.start()])
+        new_data.extend(repl_bytes)
+        if not printed_path:
+            print(f"{COLOR_PATH}{path_str}{COLOR_RESET}")
+            printed_path = True
+        log_replacement(m.start(), m.end(), m.group(0), repl_bytes, snapshot)
+        last = m.end()
+    new_data.extend(snapshot[last:])
+    data = bytes(new_data)
 
 blob.data = data
 '
