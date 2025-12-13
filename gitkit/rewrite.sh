@@ -3,7 +3,9 @@ set -euo pipefail
 
 # Git history rewriter for identity metadata and blob data.
 # - Identity: replace author/committer name/email when matched (case-insensitive match; uses provided casing).
-# - Blob data: replace within tree objects without word boundaries; matching can be case-sensitive or insensitive; replacements can optionally mirror matched casing.
+# - Blob data: replace within tree objects without word boundaries.
+#   * Matching: case-sensitive by default; add --ignore-case to match all casings.
+#   * Replacements: add --preserve-case to mirror each match's casing onto the replacement (works with or without --ignore-case).
 
 usage() {
   cat <<'EOF'
@@ -13,7 +15,7 @@ Usage: rewrite.sh [-n <new_name>] [-e <new_email>] [-o <old_emails_comma_separat
   -o  Comma-separated list of old emails to match for identity rewrites
   -O  Optional old author/committer name to require for identity rewrites
   -m  Blob data replacement mapping in the form old:new (repeatable, no word boundaries)
-  --preserve-case    Mirror matched casing onto replacements (blob data only)
+  --preserve-case    Mirror matched casing onto replacements (blob data only; works with or without --ignore-case)
   --ignore-case, -i  Apply blob replacements case-insensitively (default is case-sensitive for blob data)
 Examples:
   rewrite.sh -n "Jane Example" -e jane@new.com -o old@ex.com -m foo:bar -m olddomain.com:newdomain.com

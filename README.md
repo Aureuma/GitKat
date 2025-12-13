@@ -47,7 +47,7 @@ Rewrites commit history across multiple repositories to unify author identity an
   ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com" -O "Old Name"
   ```
 
-  **Blob data rewrite (case-preserving, no word boundaries):**
+  **Blob data rewrite (optional case-preserving, no word boundaries):**
   ```sh
   ./gitkit/rewrite.sh -m olddomain.com:newdomain.com -m SecretToken:REDACTED
   ```
@@ -64,8 +64,8 @@ Rewrites commit history across multiple repositories to unify author identity an
   ```
 
   Notes:
-  - Blob replacements are case-sensitive by default; add `--ignore-case`/`-i` to match case-insensitively.
-  - Add `--preserve-case` to mirror the matched casing onto the replacement.
+  - Blob replacements are case-sensitive by default; add `--ignore-case`/`-i` to match all casings.
+  - `--preserve-case` mirrors each match’s casing onto the replacement. Use it alone to reshape replacements to exact-cased matches, or combine with `--ignore-case` to both match all casings and mirror casing per match.
   - Blob rewrites skip binary blobs (detected by NUL bytes).
   - Identity rewrites use the exact casing you provide for `-n/-e`.
 
