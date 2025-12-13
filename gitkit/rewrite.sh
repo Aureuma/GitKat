@@ -6,7 +6,7 @@ set -euo pipefail
 # - Blob data: replace within tree objects without word boundaries.
 #   * Matching: case-sensitive by default; add --ignore-case to match all casings.
 #   * Replacements: add --preserve-case to mirror each match's casing onto the replacement (works with or without --ignore-case).
-#   * Reporting: emits colored per-file replacement logs (path in pink, matches in red, replacements in blue with nearby context).
+#   * Reporting: per-repo dividers, per-file colored lines (path magenta; match red; replacement blue) with single-line context.
 
 usage() {
   cat <<'EOF'
@@ -111,7 +111,7 @@ for repo in */.git; do
   repo_dir="${repo%/.git}"
   echo
   echo "========================================"
-  echo " Processing: $repo_dir"
+  echo " Repo: $repo_dir"
   echo "========================================"
   cd "$repo_dir"
 
@@ -186,8 +186,8 @@ import re
 raw_pairs = [line for line in os.environ.get("GITKIT_BLOB_MAP", "").splitlines() if line]
 ignore_case = os.environ.get("GITKIT_IGNORE_CASE", "0") == "1"
 preserve_case_enabled = os.environ.get("GITKIT_PRESERVE_CASE", "0") == "1"
-CTX = 30
-COLOR_PATH = "\033[95m"   # pink for file paths
+CTX_WORDS = 2
+COLOR_PATH = "\033[95m"   # magenta for file paths
 COLOR_MATCH = "\033[31m"  # red for matches
 COLOR_REPL = "\033[34m"   # blue for replacements
 COLOR_RESET = "\033[0m"
@@ -243,14 +243,18 @@ path_str = path_bytes.decode("utf-8", "ignore") or "<unknown path>"
 def decode_snippet(b):
     return b.decode("utf-8", "replace")
 
-def log_replacement(start, end, match_bytes, repl_bytes, snapshot):
-    pre_start = max(0, start - CTX)
-    post_end = min(len(snapshot), end + CTX)
-    prefix = decode_snippet(snapshot[pre_start:start])
-    suffix = decode_snippet(snapshot[end:post_end])
-    match_str = decode_snippet(match_bytes)
-    repl_str = decode_snippet(repl_bytes)
-    print(f"  ...{prefix}{COLOR_MATCH}{match_str}{COLOR_RESET}{suffix} -> ...{prefix}{COLOR_REPL}{repl_str}{COLOR_RESET}{suffix}")
+def extract_context(line_text, match_text, repl_text, match_pos):
+    prefix = line_text[:match_pos]
+    suffix = line_text[match_pos + len(match_text):]
+    pre_words = prefix.strip().split()
+    post_words = suffix.strip().split()
+    left = " ".join(pre_words[-CTX_WORDS:])
+    right = " ".join(post_words[:CTX_WORDS])
+    left = (left + " ").strip() if left else ""
+    right = (" " + right).strip() if right else ""
+    left_line = f"{left}{COLOR_MATCH}{match_text}{COLOR_RESET}{right}".strip()
+    right_line = f"{left}{COLOR_REPL}{repl_text}{COLOR_RESET}{right}".strip()
+    return left_line, right_line
 
 printed_path = False
 for pattern, replacement in patterns:
@@ -268,7 +272,17 @@ for pattern, replacement in patterns:
         if not printed_path:
             print(f"{COLOR_PATH}{path_str}{COLOR_RESET}")
             printed_path = True
-        log_replacement(m.start(), m.end(), m.group(0), repl_bytes, snapshot)
+        line_start = snapshot.rfind(b"\n", 0, m.start()) + 1
+        line_end = snapshot.find(b"\n", m.end())
+        if line_end == -1:
+            line_end = len(snapshot)
+        line_bytes = snapshot[line_start:line_end]
+        line_text = decode_snippet(line_bytes)
+        match_text = decode_snippet(m.group(0))
+        repl_text = decode_snippet(repl_bytes)
+        rel_match_pos = m.start() - line_start
+        left_line, right_line = extract_context(line_text, match_text, repl_text, rel_match_pos)
+        print(f"{COLOR_PATH}{path_str}{COLOR_RESET} {left_line} -> {right_line}")
         last = m.end()
     new_data.extend(snapshot[last:])
     data = bytes(new_data)
