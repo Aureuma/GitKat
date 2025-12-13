@@ -122,8 +122,8 @@ for repo in */.git; do
     push_urls=()
     while IFS= read -r u; do push_urls+=("$u"); done < <(git config --get-all remote."$r".pushurl || true)
     line="$r"
-    for u in "${fetch_urls[@]}"; do line+=$'\tf:'"$u"; done
-    for u in "${push_urls[@]}"; do line+=$'\tp:'"$u"; done
+    for u in "${fetch_urls[@]:-}"; do line+=$'\tf:'"$u"; done
+    for u in "${push_urls[@]:-}"; do line+=$'\tp:'"$u"; done
     REMOTE_DUMP+="$line"$'\n'
   done < <(git remote)
 
@@ -315,14 +315,14 @@ blob.data = data
           p:*) push_urls+=("${entry:2}") ;;
         esac
       done
-      if [ ${#fetch_urls[@]} -gt 0 ]; then
+      if [ ${#fetch_urls[@]:-0} -gt 0 ]; then
         git remote add "$name" "${fetch_urls[0]}" 2>/dev/null || git remote set-url "$name" "${fetch_urls[0]}"
         for ((i=1; i<${#fetch_urls[@]}; i++)); do
           git remote set-url --add "$name" "${fetch_urls[$i]}"
         done
       fi
-      if [ ${#push_urls[@]} -gt 0 ]; then
-        for url in "${push_urls[@]}"; do
+      if [ ${#push_urls[@]:-0} -gt 0 ]; then
+        for url in "${push_urls[@]:-}"; do
           git remote set-url --add --push "$name" "$url"
         done
       fi
