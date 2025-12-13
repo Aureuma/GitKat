@@ -115,7 +115,17 @@ for repo in */.git; do
   echo "========================================"
   cd "$repo_dir"
 
-  old_remote_url=$(git config remote.origin.url 2>/dev/null || true)
+  REMOTE_DUMP=""
+  while IFS= read -r r; do
+    fetch_urls=()
+    while IFS= read -r u; do fetch_urls+=("$u"); done < <(git config --get-all remote."$r".url || true)
+    push_urls=()
+    while IFS= read -r u; do push_urls+=("$u"); done < <(git config --get-all remote."$r".pushurl || true)
+    line="$r"
+    for u in "${fetch_urls[@]}"; do line+=$'\tf:'"$u"; done
+    for u in "${push_urls[@]}"; do line+=$'\tp:'"$u"; done
+    REMOTE_DUMP+="$line"$'\n'
+  done < <(git remote)
 
   GITKIT_NEW_NAME="$NEW_NAME" \
   GITKIT_NEW_EMAIL="$NEW_EMAIL" \
@@ -290,8 +300,33 @@ for pattern, replacement in patterns:
 blob.data = data
 '
 
-  if [ -n "$old_remote_url" ]; then
-    git remote add origin "$old_remote_url"
+  if [ -n "$REMOTE_DUMP" ]; then
+    while IFS= read -r line; do
+      [ -z "$line" ] && continue
+      IFS=$'\t' read -r -a parts <<< "$line"
+      name="${parts[0]}"
+      [ -z "$name" ] && continue
+      fetch_urls=()
+      push_urls=()
+      for ((i=1; i<${#parts[@]}; i++)); do
+        entry="${parts[$i]}"
+        case "$entry" in
+          f:*) fetch_urls+=("${entry:2}") ;;
+          p:*) push_urls+=("${entry:2}") ;;
+        esac
+      done
+      if [ ${#fetch_urls[@]} -gt 0 ]; then
+        git remote add "$name" "${fetch_urls[0]}" 2>/dev/null || git remote set-url "$name" "${fetch_urls[0]}"
+        for ((i=1; i<${#fetch_urls[@]}; i++)); do
+          git remote set-url --add "$name" "${fetch_urls[$i]}"
+        done
+      fi
+      if [ ${#push_urls[@]} -gt 0 ]; then
+        for url in "${push_urls[@]}"; do
+          git remote set-url --add --push "$name" "$url"
+        done
+      fi
+    done <<< "$REMOTE_DUMP"
   fi
 
   echo
