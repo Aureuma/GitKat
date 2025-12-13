@@ -86,17 +86,23 @@ if [ -n "${NEW_EMAIL:-}" ] && [ ${#OLD_EMAILS[@]} -eq 0 ]; then
 fi
 
 BLOB_SERIALIZED=""
-for pair in "${BLOB_MAP[@]}"; do
-  if [[ "$pair" != *:* ]]; then
-    echo "Invalid -m entry '$pair'. Expected old:new." >&2
-    exit 1
-  fi
-  old=${pair%%:*}
-  new=${pair#*:}
-  BLOB_SERIALIZED+="${old}"$'\t'"${new}"$'\n'
-done
+if [ ${#BLOB_MAP[@]} -gt 0 ]; then
+  for pair in "${BLOB_MAP[@]}"; do
+    if [[ "$pair" != *:* ]]; then
+      echo "Invalid -m entry '$pair'. Expected old:new." >&2
+      exit 1
+    fi
+    old=${pair%%:*}
+    new=${pair#*:}
+    BLOB_SERIALIZED+="${old}"$'\t'"${new}"$'\n'
+  done
+fi
 
-OLD_EMAILS_SERIALIZED="$(printf '%s\n' "${OLD_EMAILS[@]}")"
+if [ ${#OLD_EMAILS[@]} -gt 0 ]; then
+  OLD_EMAILS_SERIALIZED="$(printf '%s\n' "${OLD_EMAILS[@]}")"
+else
+  OLD_EMAILS_SERIALIZED=""
+fi
 
 for repo in */.git; do
   repo_dir="${repo%/.git}"
