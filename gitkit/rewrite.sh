@@ -152,7 +152,7 @@ def rewrite_identity(commit):
         if new_name:
             commit.author_name = new_name
         commit.author_email = new_email
-        print(f"[Author] {old_a_name} <{old_a_email}>  →  {(new_name or commit.author_name).decode(errors=\"ignore\")} <{new_email.decode(errors=\"ignore\")}>")
+        print(f"[Author] {old_a_name} <{old_a_email}>  →  {(new_name or commit.author_name).decode(errors='ignore')} <{new_email.decode(errors='ignore')}>")
         changed = True
 
     c_email = lower_bytes(commit.committer_email)
@@ -163,7 +163,7 @@ def rewrite_identity(commit):
         if new_name:
             commit.committer_name = new_name
         commit.committer_email = new_email
-        print(f"[Committer] {old_c_name} <{old_c_email}>  →  {(new_name or commit.committer_name).decode(errors=\"ignore\")} <{new_email.decode(errors=\"ignore\")}>")
+        print(f"[Committer] {old_c_name} <{old_c_email}>  →  {(new_name or commit.committer_name).decode(errors='ignore')} <{new_email.decode(errors='ignore')}>")
         changed = True
 
     if changed:
