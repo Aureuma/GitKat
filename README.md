@@ -28,25 +28,41 @@ Generates a report of all unique author emails found in the commit history of lo
 
 ### `rewrite.sh`
 
-Rewrites commit history across multiple repositories to unify author identity.
+Rewrites commit history across multiple repositories to unify author identity and optionally rewrite blob data.
 
-- **What it does:** Uses `git-filter-repo` to replace old author/committer names and emails with new ones. It also cleans up commit message footers like `Signed-off-by:`.
+- **What it does:** Uses `git-filter-repo` to replace author/committer names and emails when matched, cleans commit message footers like `Signed-off-by:`, and can rewrite blob contents with case-preserving substitutions (no word boundaries; text blobs only).
 - **Prerequisites:** Requires `git-filter-repo`. Install it with Homebrew:
   ```sh
   brew install git-filter-repo
   ```
 - **How to run:**
   
-  **Basic Usage:**
+  **Identity rewrite (author/committer metadata):**
   ```sh
   ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com,old2@email.com"
   ```
   
-  **With Optional Old Name Filter:**
-  To only rewrite commits from a specific author name matching the old emails, use the `-O` flag:
+  **Restrict to a specific old name:**
   ```sh
   ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com" -O "Old Name"
   ```
+
+  **Blob data rewrite (case-preserving, no word boundaries):**
+  ```sh
+  ./gitkit/rewrite.sh -m olddomain.com:newdomain.com -m SecretToken:REDACTED
+  ```
+
+  **Combine identity + blob rewrites:**
+  ```sh
+  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old@email.com" \
+    -m foo:bar -m legacyid:NEWID
+  ```
+
+  Notes:
+  - Blob replacements are case-insensitive matches but mirror the matched casing in the result.
+  - Blob rewrites skip binary blobs (detected by NUL bytes).
+  - Identity rewrites use the exact casing you provide for `-n/-e`.
+
   > **Warning:** This script rewrites Git history. After verifying the changes, you will need to force-push.
 
 ### `push.sh`
