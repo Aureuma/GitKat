@@ -1,5 +1,7 @@
 # GitKit
 
+![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)
+
 GitKit is a Python toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
 
 ## Install
@@ -64,6 +66,12 @@ uv pip install -e .
 uv pip install -e '.[dev]'
 uv run pytest
 uv run mkdocs serve
+```
+
+Coverage (latest local run):
+
+```sh
+uv run pytest --cov=gitkit --cov-report=term-missing
 ```
 
 ## License
