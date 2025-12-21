@@ -61,7 +61,7 @@ gk rewrite -m oldname:newname --rename-files
 
 ```sh
 uv pip install -e .
-uv pip install -e .[dev]
+uv pip install -e '.[dev]'
 uv run pytest
 uv run mkdocs serve
 ```

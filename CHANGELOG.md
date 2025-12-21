@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3
+
+- Added project URLs for PyPI metadata and committed uv.lock for reproducible installs.
+- Fixed uv dev install examples for shells that treat extras as globs.
+
 ## 0.2.2
 
 - Added MkDocs documentation and project metadata for publishing.

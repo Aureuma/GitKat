@@ -6,7 +6,7 @@ Thanks for helping improve GitKit.
 
 ```sh
 uv venv
-uv pip install -e .[dev]
+uv pip install -e '.[dev]'
 ```
 
 ## Running tests
