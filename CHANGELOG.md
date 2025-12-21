@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.6
+
+- Added CI workflow for linting, tests, and docs builds.
+- Added build status badge to the README.
+
 ## 0.2.5
 
 - Added coverage badge and documented coverage command in the README.

@@ -1,5 +1,6 @@
 # GitKit
 
+![CI](https://github.com/SHi-ON/GitKit/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)
 
 GitKit is a Python toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
