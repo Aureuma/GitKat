@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.8
+
+- Added dependency groups for uv and updated CI to create a venv before install.
+- Added Codecov reporting and badge for live coverage status.
+- Added Codecov configuration and coverage XML upload.
+- Updated developer install instructions to use uv dependency groups.
+
 ## 0.2.7
 
 - Fixed lint issues and ensured CI checks pass cleanly.

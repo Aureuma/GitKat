@@ -11,6 +11,7 @@
 ```sh
 uv venv
 uv pip install -e .
+uv pip install -e . --group dev
 ```
 
 ## Using pip

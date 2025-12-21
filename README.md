@@ -1,7 +1,7 @@
 # GitKit
 
-![CI](https://github.com/SHi-ON/GitKit/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)
+[![CI](https://github.com/SHi-ON/GitKit/actions/workflows/ci.yml/badge.svg)](https://github.com/SHi-ON/GitKit/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/SHi-ON/GitKit/branch/main/graph/badge.svg)](https://codecov.io/gh/SHi-ON/GitKit)
 
 GitKit is a Python toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
 
@@ -64,7 +64,7 @@ gk rewrite -m oldname:newname --rename-files
 
 ```sh
 uv pip install -e .
-uv pip install -e '.[dev]'
+uv pip install -e . --group dev
 uv run pytest
 uv run mkdocs serve
 ```

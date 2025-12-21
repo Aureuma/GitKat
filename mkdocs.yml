@@ -1,6 +1,6 @@
 site_name: GitKit
 site_description: Bulk Git repository management toolkit.
-site_url: ""
+site_url: "https://shi-on.github.io/GitKit/"
 
 theme:
   name: material
