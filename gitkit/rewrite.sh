@@ -107,7 +107,19 @@ else
   OLD_EMAILS_SERIALIZED=""
 fi
 
-for repo in */.git; do
+shopt -s nullglob
+start_dir="$(pwd)"
+repos=(*/.git)
+if [ ${#repos[@]} -eq 0 ]; then
+  if git_root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+    repos=("$git_root/.git")
+  else
+    echo "Error: no git repositories found under $(pwd). Run from a parent directory containing repos or from inside a repo." >&2
+    exit 1
+  fi
+fi
+
+for repo in "${repos[@]}"; do
   repo_dir="${repo%/.git}"
   echo
   echo "========================================"
@@ -344,7 +356,7 @@ blob.data = data
   git remote -v || echo "  (none)"
   echo "----------------------------------------"
 
-  cd ..
+  cd "$start_dir"
 done
 
 echo
