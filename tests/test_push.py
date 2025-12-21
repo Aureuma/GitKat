@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from gitkit.commands import push
-from tests.conftest import commit_file
+from tests.helpers import commit_file
 
 
 def test_push_invokes_force_push(git_repo):

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from gitkit.commands import report
-from tests.conftest import commit_file
+from tests.helpers import commit_file
 
 
 def test_report_lists_unique_emails(git_repo, capsys):

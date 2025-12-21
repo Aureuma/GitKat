@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from gitkit.commands import check
-from tests.conftest import commit_file
+from tests.helpers import commit_file
 
 
 def test_check_finds_name(git_repo, capsys):

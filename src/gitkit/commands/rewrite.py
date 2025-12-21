@@ -59,7 +59,7 @@ COMMIT_CALLBACK = textwrap.dedent(
 
         if changed:
             msg = commit.message
-            msg = re.sub(rb"(?im)^\s*(signed-off-by|co-authored-by|reviewed-by|acked-by|tested-by|reported-by|suggested-by):.*\n?", b"", msg)
+            msg = re.sub(rb"(?im)^\\s*(signed-off-by|co-authored-by|reviewed-by|acked-by|tested-by|reported-by|suggested-by):.*\\n?", b"", msg)
             if msg != commit.message:
                 print("[Message Cleanup] Removed DCO trace lines")
             commit.message = msg

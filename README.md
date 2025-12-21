@@ -1,94 +1,71 @@
-#  GitKit 🛠️
+# GitKit
 
-A collection of scripts for managing and auditing Git repositories in bulk.
+GitKit is a Python toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
 
----
+## Install
 
-## Scripts
+Using uv:
 
-### `check.sh`
+```sh
+uv venv
+uv pip install -e .
+```
 
-Audits the commit history of all local repositories.
+Using pip:
 
-- **What it does:** Scans all subdirectories for Git repositories and checks the commit logs for a specific author or committer name provided as an argument.
-- **How to run:**
-  ```sh
-  ./gitkit/check.sh "My Old Name"
-  ```
+```sh
+python -m venv .venv
+. .venv/bin/activate
+pip install -e .
+```
 
-### `report.sh`
+## Quick start
 
-Generates a report of all unique author emails found in the commit history of local repositories.
+```sh
+gk check "Example Name"
+gk report .
+gk push
+gk rewrite -m olddomain.com:newdomain.com --ignore-case --preserve-case
+gk github-emails --token YOUR_GITHUB_TOKEN
+```
 
-- **What it does:** Finds all Git repositories in the specified directory (or current directory by default) and lists the unique author emails from their commit logs.
-- **How to run:**
-  ```sh
-  ./gitkit/report.sh [path/to/repos]
-  ```
+## Commands
 
-### `rewrite.sh`
+- `gk check <name>`: search author and committer names across repos in the current directory.
+- `gk report [path]`: list unique author emails for each repo under a path.
+- `gk push`: force-push the current branch of each repo in the current directory.
+- `gk rewrite`: rewrite identity metadata and/or blob contents using git-filter-repo.
+- `gk github-emails --token <token>`: find contribution emails across GitHub repos you can access.
 
-Rewrites commit history across multiple repositories to unify author identity and optionally rewrite blob data.
+## Rewrite notes
 
-- **What it does:** Uses `git-filter-repo` to replace author/committer names and emails when matched, cleans commit message footers like `Signed-off-by:`, and can rewrite blob contents with optional case-preserving substitutions (no word boundaries; text blobs only, case-sensitive by default).
-- **Prerequisites:** Requires `git-filter-repo`. Install it with Homebrew:
-  ```sh
-  brew install git-filter-repo
-  ```
-- **How to run:**
-  
-  **Identity rewrite (author/committer metadata):**
-  ```sh
-  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com,old2@email.com"
-  ```
-  
-  **Restrict to a specific old name:**
-  ```sh
-  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old1@email.com" -O "Old Name"
-  ```
+`gk rewrite` preserves the existing behavior of `rewrite.sh`, including case-aware blob mapping and commit metadata rewrites. It runs `git filter-repo` under the hood, so you need Git and git-filter-repo installed.
 
-  **Blob data rewrite (optional case-preserving, no word boundaries):**
-  ```sh
-  ./gitkit/rewrite.sh -m olddomain.com:newdomain.com -m SecretToken:REDACTED
-  ```
+Examples:
 
-  **Case-insensitive blob rewrite with preserved casing:**
-  ```sh
-  ./gitkit/rewrite.sh -m foo:bar -m oldid:NEWID --ignore-case --preserve-case
-  ```
+```sh
+# Identity rewrite
+gk rewrite -n "New Name" -e "new@example.test" -o "old@example.test"
 
-  **Combine identity + blob rewrites:**
-  ```sh
-  ./gitkit/rewrite.sh -n "New Name" -e "new@email.com" -o "old@email.com" \
-    -m foo:bar -m legacyid:NEWID
-  ```
+# Blob rewrite with preserved casing and case-insensitive matching
+gk rewrite -m foo:bar --ignore-case --preserve-case
 
-  Notes:
-  - Blob replacements are case-sensitive by default; add `--ignore-case`/`-i` to match all casings.
-  - `--preserve-case` mirrors each match’s casing onto the replacement. Use it alone to reshape replacements to exact-cased matches, or combine with `--ignore-case` to both match all casings and mirror casing per match.
-  - Blob rewrites skip binary blobs (detected by NUL bytes).
-  - Identity rewrites use the exact casing you provide for `-n/-e`.
+# Exclude files from blob rewrites
+gk rewrite -m token:REDACTED -x "data/*.csv" -x "vendor/*"
 
-  > **Warning:** This script rewrites Git history. After verifying the changes, you will need to force-push.
+# Rename file paths using the same mappings
+gk rewrite -m oldname:newname --rename-files
+```
 
-### `push.sh`
+## Development
 
-Force-pushes the current branch of all local repositories to their `origin` remote.
+```sh
+uv pip install -e .
+uv pip install -e .[dev]
+uv run pytest
+uv run mkdocs serve
+```
 
-- **What it does:** Iterates through all repositories in the subdirectories and force-pushes the currently checked-out branch.
-- **How to run:**
-  ```sh
-  ./gitkit/push.sh
-  ```
-  > **Note:** Use with caution, as it force-pushes.
+## License
 
-### `github_email_finder.py`
-
-Finds all unique email addresses associated with your GitHub contributions.
-
-- **What it does:** Scans all repositories you own and contribute to (in organizations) to find every email address you've used for commits and pull requests.
-- **How to run:**
-  ```sh
-  python3 ./gitkit/github_email_finder.py --token YOUR_GITHUB_TOKEN
-  ```
-  You'll need to provide a GitHub Personal Access Token with repository access.
+MIT License. See `LICENSE`.

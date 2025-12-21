@@ -1,0 +1,17 @@
+site_name: GitKit
+site_description: Bulk Git repository management toolkit.
+site_url: ""
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Commands: commands.md
+  - Rewrite: rewrite.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+  - Roadmap: roadmap.md
