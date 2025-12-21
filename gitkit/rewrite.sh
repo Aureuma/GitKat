@@ -10,12 +10,13 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: rewrite.sh [-n <new_name>] [-e <new_email>] [-o <old_emails_comma_separated>] [-O <old_name>] [-m <old:new>] [--preserve-case] [--ignore-case|-i]
+Usage: rewrite.sh [-n <new_name>] [-e <new_email>] [-o <old_emails_comma_separated>] [-O <old_name>] [-m <old:new>] [-x <glob>] [--preserve-case] [--ignore-case|-i]
   -n  New author/committer name (applied when identity matches)
   -e  New author/committer email (required with -o)
   -o  Comma-separated list of old emails to match for identity rewrites
   -O  Optional old author/committer name to require for identity rewrites
   -m  Blob data replacement mapping in the form old:new (repeatable, no word boundaries)
+  -x  Exclude files from blob rewrites (glob, repeatable; comma-separated allowed)
   --preserve-case    Mirror matched casing onto replacements (blob data only; works with or without --ignore-case)
   --ignore-case, -i  Apply blob replacements case-insensitively (default is case-sensitive for blob data)
 Examples:
@@ -30,6 +31,7 @@ NEW_EMAIL=""
 OLD_NAME=""
 OLD_EMAILS=()
 BLOB_MAP=()
+EXCLUDE_PATTERNS=()
 PRESERVE_CASE=0
 IGNORE_CASE=0
 
@@ -57,6 +59,10 @@ while [ $# -gt 0 ]; do
     -m)
       require_arg "$1" "${2:-}"
       BLOB_MAP+=("$2"); shift 2 ;;
+    -x)
+      require_arg "$1" "${2:-}"
+      IFS=',' read -r -a exclude_items <<< "$2"
+      EXCLUDE_PATTERNS+=("${exclude_items[@]}"); shift 2 ;;
     --preserve-case)
       PRESERVE_CASE=1; shift ;;
     --ignore-case|-i)
@@ -107,6 +113,12 @@ else
   OLD_EMAILS_SERIALIZED=""
 fi
 
+if [ ${#EXCLUDE_PATTERNS[@]} -gt 0 ]; then
+  EXCLUDE_SERIALIZED="$(printf '%s\n' "${EXCLUDE_PATTERNS[@]}")"
+else
+  EXCLUDE_SERIALIZED=""
+fi
+
 shopt -s nullglob
 start_dir="$(pwd)"
 repos=(*/.git)
@@ -144,6 +156,7 @@ for repo in "${repos[@]}"; do
   GITKIT_OLD_NAME="$OLD_NAME" \
   GITKIT_OLD_EMAILS="$OLD_EMAILS_SERIALIZED" \
   GITKIT_BLOB_MAP="$BLOB_SERIALIZED" \
+  GITKIT_EXCLUDE_PATTERNS="$EXCLUDE_SERIALIZED" \
   GITKIT_PRESERVE_CASE="$PRESERVE_CASE" \
   GITKIT_IGNORE_CASE="$IGNORE_CASE" \
   git filter-repo --force \
@@ -202,10 +215,12 @@ def rewrite_identity(commit):
 rewrite_identity(commit)
 ' \
     --file-info-callback '
+import fnmatch
 import os
 import re
 
 raw_pairs = [line for line in os.environ.get("GITKIT_BLOB_MAP", "").splitlines() if line]
+exclude_raw = [line for line in os.environ.get("GITKIT_EXCLUDE_PATTERNS", "").splitlines() if line]
 ignore_case = os.environ.get("GITKIT_IGNORE_CASE", "0") == "1"
 preserve_case_enabled = os.environ.get("GITKIT_PRESERVE_CASE", "0") == "1"
 CTX_WORDS = 2
@@ -216,7 +231,20 @@ COLOR_RESET = "\033[0m"
 if not raw_pairs:
     return (filename, mode, blob_id)
 
+path_bytes = filename or b""
+path_str = path_bytes.decode("utf-8", "ignore") or "<unknown path>"
+
 state = value.data.setdefault("gitkit_blob_state", {})
+exclude_patterns = state.get("exclude_patterns")
+if exclude_patterns is None:
+    state["exclude_patterns"] = exclude_raw
+    exclude_patterns = state["exclude_patterns"]
+
+if exclude_patterns:
+    for pat in exclude_patterns:
+        if fnmatch.fnmatchcase(path_str, pat):
+            return (filename, mode, blob_id)
+
 patterns = state.get("patterns")
 if patterns is None:
     pairs = []
@@ -267,8 +295,6 @@ if value.is_binary(contents):
     return (filename, mode, blob_id)
 
 data = contents
-path_bytes = filename or b""
-path_str = path_bytes.decode("utf-8", "ignore") or "<unknown path>"
 
 def decode_snippet(b):
     return b.decode("utf-8", "replace")
