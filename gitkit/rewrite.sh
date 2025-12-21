@@ -201,7 +201,7 @@ def rewrite_identity(commit):
 
 rewrite_identity(commit)
 ' \
-    --blob-callback '
+    --file-info-callback '
 import os
 import re
 
@@ -214,20 +214,27 @@ COLOR_MATCH = "\033[31m"  # red for matches
 COLOR_REPL = "\033[34m"   # blue for replacements
 COLOR_RESET = "\033[0m"
 if not raw_pairs:
-    return
+    return (filename, mode, blob_id)
 
-pairs = []
-for line in raw_pairs:
-    if "\t" not in line:
-        continue
-    old, new = line.split("\t", 1)
-    pairs.append((old.encode(), new.encode()))
+state = value.data.setdefault("gitkit_blob_state", {})
+patterns = state.get("patterns")
+if patterns is None:
+    pairs = []
+    for line in raw_pairs:
+        if "\t" not in line:
+            continue
+        old, new = line.split("\t", 1)
+        pairs.append((old.encode(), new.encode()))
 
-if not pairs:
-    return
+    if not pairs:
+        state["patterns"] = []
+    else:
+        re_flags = re.IGNORECASE if ignore_case else 0
+        state["patterns"] = [(re.compile(re.escape(old), re_flags), new) for old, new in pairs]
+    patterns = state["patterns"]
 
-re_flags = re.IGNORECASE if ignore_case else 0
-patterns = [(re.compile(re.escape(old), re_flags), new) for old, new in pairs]
+if not patterns:
+    return (filename, mode, blob_id)
 
 def preserve_case(match, replacement):
     # Mirror the matched casing pattern onto the replacement.
@@ -255,11 +262,12 @@ def preserve_case(match, replacement):
             out.append(b)
     return bytes(out)
 
-if b"\0" in blob.data:
-    return
+contents = value.get_contents_by_identifier(blob_id)
+if value.is_binary(contents):
+    return (filename, mode, blob_id)
 
-data = blob.data
-path_bytes = getattr(blob, "path", None) or getattr(blob, "original_path", None) or b""
+data = contents
+path_bytes = filename or b""
 path_str = path_bytes.decode("utf-8", "ignore") or "<unknown path>"
 
 def decode_snippet(b):
@@ -279,11 +287,13 @@ def extract_context(line_text, match_text, repl_text, match_pos):
     return left_line, right_line
 
 printed_path = False
+changed = False
 for pattern, replacement in patterns:
     matches = list(pattern.finditer(data))
     if not matches:
         continue
 
+    changed = True
     snapshot = data
     new_data = bytearray()
     last = 0
@@ -309,7 +319,11 @@ for pattern, replacement in patterns:
     new_data.extend(snapshot[last:])
     data = bytes(new_data)
 
-blob.data = data
+if not changed:
+    return (filename, mode, blob_id)
+
+new_blob_id = value.insert_file_with_contents(data)
+return (filename, mode, new_blob_id)
 '
 
   if [ -n "$REMOTE_DUMP" ]; then
