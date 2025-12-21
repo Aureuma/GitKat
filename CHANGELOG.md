@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5
+
+- Added coverage badge and documented coverage command in the README.
+
 ## 0.2.4
 
 - Fixed CLI syntax and rewrite error handling.
