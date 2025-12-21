@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.7
+
+- Fixed lint issues and ensured CI checks pass cleanly.
+
 ## 0.2.6
 
 - Added CI workflow for linting, tests, and docs builds.
