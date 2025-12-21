@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.11
+
+- Fixed PyPI trusted publishing workflow to match OIDC configuration.
+
 ## 0.2.10
 
 - Added PyPI release workflow with OIDC trusted publishing.
