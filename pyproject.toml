@@ -32,9 +32,9 @@ classifiers = [
 gk = "gitkit.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/SHi-ON/GitKit"
-Repository = "https://github.com/SHi-ON/GitKit"
-Changelog = "https://github.com/SHi-ON/GitKit/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Aureuma/GitKit"
+Repository = "https://github.com/Aureuma/GitKit"
+Changelog = "https://github.com/Aureuma/GitKit/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 dev = [
   "mkdocs>=1.6.0",
