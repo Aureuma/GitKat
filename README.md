@@ -1,9 +1,15 @@
-#  𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸
+<a href="https://github.com/Aureuma/GitKit">
+  <img src="docs/assets/logo.svg" alt="⫷⫸" width="88" height="88">
+</a>
 
-[![CI](https://github.com/SHi-ON/GitKit/actions/workflows/ci.yml/badge.svg)](https://github.com/SHi-ON/GitKit/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/SHi-ON/GitKit/branch/main/graph/badge.svg)](https://codecov.io/gh/SHi-ON/GitKit)
+# 𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸
 
-GitKit is a Python toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
+[![CI](https://github.com/Aureuma/GitKit/actions/workflows/ci.yml/badge.svg)](https://github.com/Aureuma/GitKit/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/gitkit.svg?logo=pypi&logoColor=white)](https://pypi.org/project/GitKit/)
+[![codecov](https://codecov.io/gh/Aureuma/GitKit/branch/main/graph/badge.svg)](https://codecov.io/gh/Aureuma/GitKit)
+[![GitHub](https://img.shields.io/badge/GitHub-Aureuma/GitKit-181717?logo=github&logoColor=white)](https://github.com/Aureuma/GitKit)
+
+𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸ (GitKit) is a Python toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
 
 ## Install
 

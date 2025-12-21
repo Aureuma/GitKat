@@ -1,6 +1,6 @@
-# GitKit
+# 𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸
 
-GitKit is a Python CLI for bulk Git repository maintenance. It keeps the behavior of the original shell tooling while adding packaging, tests, and documentation.
+𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸ (GitKit) is a Python CLI for bulk Git repository maintenance. It keeps the behavior of the original shell tooling while adding packaging, tests, and documentation.
 
 ## Highlights
 
