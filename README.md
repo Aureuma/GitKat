@@ -1,4 +1,4 @@
-# GitKit
+#  𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸
 
 [![CI](https://github.com/SHi-ON/GitKit/actions/workflows/ci.yml/badge.svg)](https://github.com/SHi-ON/GitKit/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/SHi-ON/GitKit/branch/main/graph/badge.svg)](https://codecov.io/gh/SHi-ON/GitKit)
