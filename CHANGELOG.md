@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.10
+
+- Added PyPI release workflow with OIDC trusted publishing.
+- Updated branding, docs assets, and repo links for the Aureuma org.
+- Added GitHub and PyPI buttons plus a logo asset for docs/README.
+
 ## 0.2.9
 
 - Relaxed Codecov upload failure to prevent CI failures without token configuration.
