@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from gitkit.commands import rewrite
+from gitkat.commands import rewrite
 from tests.helpers import commit_file
 
 

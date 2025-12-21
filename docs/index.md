@@ -1,21 +1,21 @@
 <p align="center">
-  <a href="https://github.com/Aureuma/GitKit">
+  <a href="https://github.com/Aureuma/GitKat">
     <img src="assets/logo.svg" alt="⫷⫸" width="96" height="96">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/Aureuma/GitKit">
-    <img alt="GitHub" src="https://img.shields.io/badge/GitHub-Aureuma/GitKit-181717?logo=github&logoColor=white">
+  <a href="https://github.com/Aureuma/GitKat">
+    <img alt="GitHub" src="https://img.shields.io/badge/GitHub-Aureuma/GitKat-181717?logo=github&logoColor=white">
   </a>
-  <a href="https://pypi.org/project/GitKit/">
-    <img alt="PyPI" src="https://img.shields.io/pypi/v/gitkit.svg?logo=pypi&logoColor=white">
+  <a href="https://pypi.org/project/GitKat/">
+    <img alt="PyPI" src="https://img.shields.io/pypi/v/GitKat.svg?logo=pypi&logoColor=white">
   </a>
 </p>
 
-# 𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸
+# 𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸
 
-𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸ (GitKit) is a Python CLI for bulk Git repository maintenance. It keeps the behavior of the original shell tooling while adding packaging, tests, and documentation.
+𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ (GitKat) is a Python CLI for bulk Git repository maintenance. It keeps the behavior of the original shell tooling while adding packaging, tests, and documentation.
 
 ## Highlights
 

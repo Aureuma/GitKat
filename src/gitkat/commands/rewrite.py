@@ -91,7 +91,7 @@ FILE_INFO_CALLBACK = textwrap.dedent(
     path_bytes = filename or b""
     path_str = path_bytes.decode("utf-8", "ignore") or "<unknown path>"
 
-    state = value.data.setdefault("gitkit_blob_state", {})
+    state = value.data.setdefault("gitkat_blob_state", {})
     exclude_patterns = state.get("exclude_patterns")
     if exclude_patterns is None:
         state["exclude_patterns"] = exclude_raw

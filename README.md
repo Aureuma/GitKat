@@ -1,15 +1,15 @@
-<a href="https://github.com/Aureuma/GitKit">
+<a href="https://github.com/Aureuma/GitKat">
   <img src="docs/assets/logo.svg" alt="⫷⫸" width="88" height="88">
 </a>
 
-# 𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸
+# 𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸
 
-[![CI](https://github.com/Aureuma/GitKit/actions/workflows/ci.yml/badge.svg)](https://github.com/Aureuma/GitKit/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/gitkit.svg?logo=pypi&logoColor=white)](https://pypi.org/project/GitKit/)
-[![codecov](https://codecov.io/gh/Aureuma/GitKit/branch/main/graph/badge.svg)](https://codecov.io/gh/Aureuma/GitKit)
-[![GitHub](https://img.shields.io/badge/GitHub-Aureuma/GitKit-181717?logo=github&logoColor=white)](https://github.com/Aureuma/GitKit)
+[![CI](https://github.com/Aureuma/GitKat/actions/workflows/ci.yml/badge.svg)](https://github.com/Aureuma/GitKat/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/GitKat.svg?logo=pypi&logoColor=white)](https://pypi.org/project/GitKat/)
+[![codecov](https://codecov.io/gh/Aureuma/GitKat/branch/main/graph/badge.svg)](https://codecov.io/gh/Aureuma/GitKat)
+[![GitHub](https://img.shields.io/badge/GitHub-Aureuma/GitKat-181717?logo=github&logoColor=white)](https://github.com/Aureuma/GitKat)
 
-𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸ (GitKit) is a Python toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
+𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ (GitKat) is a Python toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
 
 ## Install
 
@@ -78,7 +78,7 @@ uv run mkdocs serve
 Coverage (latest local run):
 
 ```sh
-uv run pytest --cov=gitkit --cov-report=term-missing
+uv run pytest --cov=gitkat --cov-report=term-missing
 ```
 
 ## License

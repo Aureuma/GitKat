@@ -1,4 +1,4 @@
-"""Module entrypoint for python -m gitkit."""
+"""Module entrypoint for python -m gitkat."""
 
 from .cli import main
 

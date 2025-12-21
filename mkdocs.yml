@@ -1,8 +1,8 @@
-site_name: "𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸"
-site_description: 𝔾𝚒𝚝𝕂𝚒𝚝 ⫷⫸ is a bulk Git repository management toolkit.
-site_url: "https://aureuma.github.io/GitKit/"
-repo_url: "https://github.com/Aureuma/GitKit"
-repo_name: "Aureuma/GitKit"
+site_name: "𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸"
+site_description: 𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ is a bulk Git repository management toolkit.
+site_url: "https://aureuma.github.io/GitKat/"
+repo_url: "https://github.com/Aureuma/GitKat"
+repo_name: "Aureuma/GitKat"
 
 theme:
   name: material

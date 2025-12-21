@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from gitkit.commands import push
+from gitkat.commands import push
 from tests.helpers import commit_file
 
 

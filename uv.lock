@@ -442,8 +442,8 @@ wheels = [
 ]
 
 [[package]]
-name = "gitkit"
-version = "0.2.9"
+name = "gitkat"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "git-filter-repo" },

@@ -1,4 +1,4 @@
-"""Command-line entrypoint for GitKit."""
+"""Command-line entrypoint for GitKat."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from .commands.rewrite import RewriteOptions
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="gk",
-        description="GitKit: bulk Git repository utilities.",
+        description="GitKat: bulk Git repository utilities.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

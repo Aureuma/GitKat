@@ -22,7 +22,7 @@ jobs:
       - name: Lint
         run: uv run ruff check src tests
       - name: Tests
-        run: uv run pytest --cov=gitkit --cov-report=term-missing --cov-report=xml
+        run: uv run pytest --cov=gitkat --cov-report=term-missing --cov-report=xml
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:

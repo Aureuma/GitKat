@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Renamed the project and distribution to GitKat.
+- Renamed the Python package namespace to `gitkat`.
+- Updated repo links, badges, docs branding, and build config for the new name.
+
 ## 0.2.11
 
 - Fixed PyPI trusted publishing workflow to match OIDC configuration.

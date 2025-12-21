@@ -16,7 +16,7 @@ def create_github_session(token: str) -> requests.Session:
         {
             "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github.v3+json",
-            "User-Agent": "GitKit-Email-Finder",
+            "User-Agent": "GitKat-Email-Finder",
         }
     )
     return session

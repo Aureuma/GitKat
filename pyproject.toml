@@ -3,8 +3,8 @@ requires = ["hatchling>=1.24.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "gitkit"
-version = "0.2.11"
+name = "GitKat"
+version = "0.3.0"
 description = "Bulk Git repository management toolkit."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -29,12 +29,12 @@ classifiers = [
 ]
 
 [project.scripts]
-gk = "gitkit.cli:main"
+gk = "gitkat.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/Aureuma/GitKit"
-Repository = "https://github.com/Aureuma/GitKit"
-Changelog = "https://github.com/Aureuma/GitKit/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Aureuma/GitKat"
+Repository = "https://github.com/Aureuma/GitKat"
+Changelog = "https://github.com/Aureuma/GitKat/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 dev = [
   "mkdocs>=1.6.0",

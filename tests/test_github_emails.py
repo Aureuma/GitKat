@@ -1,6 +1,6 @@
 import requests
 
-from gitkit.commands import github_emails
+from gitkat.commands import github_emails
 
 
 class DummyResponse:
@@ -57,7 +57,7 @@ def test_get_contribution_emails_collects_from_commits_and_prs():
 def test_create_github_session_sets_headers():
     session = github_emails.create_github_session("token")
     assert session.headers["Authorization"] == "Bearer token"
-    assert "GitKit-Email-Finder" in session.headers["User-Agent"]
+    assert "GitKat-Email-Finder" in session.headers["User-Agent"]
 
 
 def test_get_authenticated_user():

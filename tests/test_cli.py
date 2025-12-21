@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from gitkit import cli
+from gitkat import cli
 
 
 def test_cli_requires_command():
@@ -80,7 +80,7 @@ def test_module_entrypoint(monkeypatch):
         return 0
 
     monkeypatch.setattr(cli.check, "run", fake_run)
-    monkeypatch.setattr(sys, "argv", ["gitkit", "check", "Example"])
+    monkeypatch.setattr(sys, "argv", ["gitkat", "check", "Example"])
     with pytest.raises(SystemExit) as exc:
-        runpy.run_module("gitkit.__main__", run_name="__main__")
+        runpy.run_module("gitkat.__main__", run_name="__main__")
     assert exc.value.code == 0

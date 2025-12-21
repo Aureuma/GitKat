@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve GitKit.
+Thanks for helping improve GitKat.
 
 ## Local setup
 

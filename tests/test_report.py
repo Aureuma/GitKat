@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from gitkit.commands import report
+from gitkat.commands import report
 from tests.helpers import commit_file
 
 

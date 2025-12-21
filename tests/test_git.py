@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from gitkit import git
+from gitkat import git
 
 
 def init_repo(path: Path) -> None:
