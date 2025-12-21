@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 from gitkit.commands import report
@@ -26,3 +27,20 @@ def test_report_lists_unique_emails(git_repo, capsys):
     assert exit_code == 0
     assert "alpha@example.test" in captured
     assert "beta@example.test" in captured
+
+
+def test_report_no_repos(tmp_path, capsys):
+    exit_code = report.run(tmp_path)
+    captured = capsys.readouterr().out
+    assert exit_code == 1
+    assert "No git repositories found" in captured
+
+
+def test_report_no_commits(tmp_path, capsys):
+    repo = tmp_path / "empty-repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    exit_code = report.run(tmp_path)
+    captured = capsys.readouterr().out
+    assert exit_code == 0
+    assert "(no commits)" in captured

@@ -38,7 +38,22 @@ def build_parser() -> argparse.ArgumentParser:
     rewrite_parser.add_argument("--rename-files", action="store_true", help="Apply mappings to file paths.")
     rewrite_parser.add_argument("--preserve-case", action="store_true", help="Preserve casing for replacements.")
     rewrite_parser.add_argument("--ignore-case", "-i", action="store_true", help="Match blob replacements case-insensitively.")
-    rewrite_parser.set_defaults(\n        func=lambda args: rewrite.run(\n            RewriteOptions(\n                new_name=args.new_name,\n                new_email=args.new_email,\n                old_name=args.old_name,\n                old_emails=args.old_emails,\n                blob_map=args.blob_map,\n                exclude_patterns=args.exclude_patterns,\n                preserve_case=args.preserve_case,\n                ignore_case=args.ignore_case,\n                rename_files=args.rename_files,\n            ),\n            Path.cwd(),\n        )\n    )
+    rewrite_parser.set_defaults(
+        func=lambda args: rewrite.run(
+            RewriteOptions(
+                new_name=args.new_name,
+                new_email=args.new_email,
+                old_name=args.old_name,
+                old_emails=args.old_emails,
+                blob_map=args.blob_map,
+                exclude_patterns=args.exclude_patterns,
+                preserve_case=args.preserve_case,
+                ignore_case=args.ignore_case,
+                rename_files=args.rename_files,
+            ),
+            Path.cwd(),
+        )
+    )
 
     emails_parser = subparsers.add_parser("github-emails", help="Find GitHub contribution emails.")
     emails_parser.add_argument("--token", help="GitHub personal access token.")

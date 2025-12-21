@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4
+
+- Fixed CLI syntax and rewrite error handling.
+- Expanded test suite to reach near-full coverage.
+
 ## 0.2.3
 
 - Added project URLs for PyPI metadata and committed uv.lock for reproducible installs.

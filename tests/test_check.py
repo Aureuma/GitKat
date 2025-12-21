@@ -30,3 +30,10 @@ def test_check_no_match(git_repo, capsys):
     captured = capsys.readouterr().out
     assert exit_code == 0
     assert "Nothing." in captured
+
+
+def test_check_no_repos(tmp_path, capsys):
+    exit_code = check.run("example", tmp_path)
+    captured = capsys.readouterr().out
+    assert exit_code == 1
+    assert "No git repositories found" in captured

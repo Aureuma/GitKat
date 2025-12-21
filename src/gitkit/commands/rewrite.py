@@ -378,12 +378,18 @@ def _print_summary(repo: Path, opts: RewriteOptions) -> None:
 
 
 def run(options: RewriteOptions, base_dir: Path | None = None) -> int:
+    try:
+        blob_map = _parse_blob_map(options.blob_map or [])
+    except ValueError as exc:
+        print(str(exc))
+        return 1
+
     opts = RewriteOptions(
         new_name=options.new_name or "",
         new_email=options.new_email or "",
         old_name=options.old_name or "",
         old_emails=_split_comma_args(options.old_emails),
-        blob_map=_parse_blob_map(options.blob_map or []),
+        blob_map=blob_map,
         exclude_patterns=_split_comma_args(options.exclude_patterns),
         preserve_case=options.preserve_case,
         ignore_case=options.ignore_case,
