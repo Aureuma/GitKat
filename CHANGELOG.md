@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.9
+
+- Relaxed Codecov upload failure to prevent CI failures without token configuration.
+- Added Codecov token support in CI.
+
 ## 0.2.8
 
 - Added dependency groups for uv and updated CI to create a venv before install.
