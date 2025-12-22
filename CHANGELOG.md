@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Fixed git-filter-repo callback indentation for rewrite mappings.
+
 ## 0.3.0
 
 - Renamed the project and distribution to GitKat.

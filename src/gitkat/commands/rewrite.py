@@ -67,7 +67,7 @@ COMMIT_CALLBACK = textwrap.dedent(
 
     rewrite_identity(commit)
     """
-).strip()
+).lstrip("\n")
 
 FILE_INFO_CALLBACK = textwrap.dedent(
     """
@@ -226,7 +226,7 @@ FILE_INFO_CALLBACK = textwrap.dedent(
     new_blob_id = value.insert_file_with_contents(data)
     return (filename, mode, new_blob_id)
     """
-).strip()
+).lstrip("\n")
 
 
 @dataclass
