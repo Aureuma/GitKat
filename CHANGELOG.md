@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0
+
+- Renamed the project and distribution to GitKat.
+- Renamed the Python package namespace to `gitkat`.
+- Updated repo links, badges, docs branding, and build config for the new name.
+- Added PyPI release workflow with OIDC trusted publishing.
+- Added GitHub and PyPI buttons plus a logo asset for docs/README.
+- Added Codecov token support, reporting, and coverage XML uploads in CI.
+- Added dependency groups for uv and updated CI to create a venv before install.
+- Added CI workflow for linting, tests, and docs builds.
+- Added build status and coverage badges to the README.
+- Updated developer install instructions to use uv dependency groups.
+
 ## 0.3.2
 
 - Fixed newline escaping in rewrite callbacks for git-filter-repo.
