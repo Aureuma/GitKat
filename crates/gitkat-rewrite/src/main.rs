@@ -5,11 +5,12 @@ use std::process::Command;
 
 use anyhow::{anyhow, Context, Result};
 use clap::Parser;
-use gix::bstr::BString;
+use gix::bstr::{BStr, BString};
 use gix::hash::ObjectId;
 use gix::object::tree::EntryKind;
 use gix::Reference;
-use gix_object::{Commit as CommitObject, Kind as ObjectKind, Tag as TagObject};
+use gix::actor::SignatureRef;
+use gix_object::{CommitRef, Kind as ObjectKind, Tree as TreeObject, Write};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use regex::bytes::{Regex, RegexBuilder};
 
@@ -220,38 +221,54 @@ fn rewrite_commit(
     commit_map: &HashMap<ObjectId, ObjectId>,
     commit_hex: &[(String, String)],
 ) -> Result<ObjectId> {
-    let commit = repo.find_commit(commit_id)?;
-    let decoded = commit.decode()?;
-    let mut owned: CommitObject = decoded.to_owned()?;
-    // Match git fast-export/import behavior by dropping extra headers like gpgsig.
-    owned.extra_headers.clear();
+    let object = repo.find_object(commit_id)?;
+    if object.kind != ObjectKind::Commit {
+        return Err(anyhow!("Expected commit object, got {:?}", object.kind));
+    }
+    let commit_ref = CommitRef::from_bytes(&object.data)?;
 
-    let (author, author_changed) = rewrite_signature(owned.author, options);
-    let (committer, committer_changed) = rewrite_signature(owned.committer, options);
+    let author_sig = SignatureRef::from_bytes::<gix_object::decode::ParseError>(commit_ref.author.as_ref())
+        .map_err(|err| anyhow!("Invalid author signature: {err:?}"))?;
+    let committer_sig =
+        SignatureRef::from_bytes::<gix_object::decode::ParseError>(commit_ref.committer.as_ref())
+            .map_err(|err| anyhow!("Invalid committer signature: {err:?}"))?;
+
+    let (author_line, author_changed) = rewrite_signature_line(commit_ref.author, author_sig, options)?;
+    let (committer_line, committer_changed) =
+        rewrite_signature_line(commit_ref.committer, committer_sig, options)?;
     let identity_changed = author_changed || committer_changed;
-    owned.author = author;
-    owned.committer = committer;
 
+    let mut message = commit_ref.message.to_owned();
     if identity_changed {
-        owned.message = cleanup_dco(owned.message);
+        message = cleanup_dco(message);
+    }
+    message = rewrite_commit_ids(message, commit_map, commit_hex);
+
+    let tree_id = ObjectId::from_hex(commit_ref.tree.as_ref())?;
+    let new_tree = rewrite_tree(repo, tree_id, options)?;
+
+    let mut parents = Vec::with_capacity(commit_ref.parents.len());
+    for parent_hex in &commit_ref.parents {
+        let parent_id = ObjectId::from_hex(parent_hex.as_ref())?;
+        let new_parent = commit_map
+            .get(&parent_id)
+            .copied()
+            .ok_or_else(|| anyhow!("Missing rewritten parent {parent_id}"))?;
+        parents.push(new_parent);
     }
 
-    owned.message = rewrite_commit_ids(owned.message, commit_map, commit_hex);
-
-    owned.tree = rewrite_tree(repo, owned.tree, options)?;
-    let old_parents = owned.parents.clone();
-    owned.parents = old_parents
-        .iter()
-        .map(|parent| {
-            commit_map
-                .get(parent)
-                .copied()
-                .ok_or_else(|| anyhow!("Missing rewritten parent {parent}"))
-        })
-        .collect::<Result<_>>()?;
-
-    let new_id = repo.write_object(&owned)?;
-    Ok(new_id.detach())
+    let commit_bytes = build_commit_bytes(
+        new_tree,
+        &parents,
+        &author_line,
+        &committer_line,
+        commit_ref.encoding,
+        &message,
+    );
+    let new_id = repo
+        .write_buf(ObjectKind::Commit, &commit_bytes)
+        .map_err(|err| anyhow!(err))?;
+    Ok(new_id)
 }
 
 fn rewrite_commit_ids(
@@ -296,31 +313,75 @@ fn rewrite_commit_ids(
     BString::from(replaced.into_owned())
 }
 
-fn rewrite_signature(mut signature: gix::actor::Signature, options: &Options) -> (gix::actor::Signature, bool) {
+fn rewrite_signature_line<'a>(
+    raw: &'a BStr,
+    signature: SignatureRef<'a>,
+    options: &Options,
+) -> Result<(Cow<'a, [u8]>, bool)> {
     if options.old_emails.is_empty() || options.new_email.is_none() {
-        return (signature, false);
+        return Ok((Cow::Borrowed(raw.as_ref()), false));
     }
-    let email_lower = lower_bytes(signature.email.as_ref());
-    let name_lower = lower_bytes(signature.name.as_ref());
+    let trimmed = signature.trim();
+    let email_lower = lower_bytes(trimmed.email.as_ref());
+    let name_lower = lower_bytes(trimmed.name.as_ref());
     let matches_email = options.old_emails.contains(&email_lower);
     let matches_name = options
         .old_name
         .as_ref()
         .map(|name| name == &name_lower)
         .unwrap_or(true);
-    if matches_email && matches_name {
-        if let Some(name) = &options.new_name {
-            signature.name = name.clone();
-        }
-        signature.email = options.new_email.clone().expect("new email");
-        (signature, true)
-    } else {
-        (signature, false)
+    if !(matches_email && matches_name) {
+        return Ok((Cow::Borrowed(raw.as_ref()), false));
     }
+
+    let mut out = Vec::new();
+    if let Some(name) = &options.new_name {
+        out.extend_from_slice(name.as_ref());
+    } else {
+        out.extend_from_slice(signature.name.as_ref());
+    }
+    out.extend_from_slice(b" <");
+    out.extend_from_slice(options.new_email.as_ref().expect("new email").as_ref());
+    out.extend_from_slice(b"> ");
+    out.extend_from_slice(signature.time.as_bytes());
+    Ok((Cow::Owned(out), true))
 }
 
 fn lower_bytes(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).to_lowercase()
+}
+
+fn build_commit_bytes(
+    tree: ObjectId,
+    parents: &[ObjectId],
+    author: &[u8],
+    committer: &[u8],
+    encoding: Option<&BStr>,
+    message: &BString,
+) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(b"tree ");
+    out.extend_from_slice(tree.to_string().as_bytes());
+    out.push(b'\n');
+    for parent in parents {
+        out.extend_from_slice(b"parent ");
+        out.extend_from_slice(parent.to_string().as_bytes());
+        out.push(b'\n');
+    }
+    out.extend_from_slice(b"author ");
+    out.extend_from_slice(author);
+    out.push(b'\n');
+    out.extend_from_slice(b"committer ");
+    out.extend_from_slice(committer);
+    out.push(b'\n');
+    if let Some(encoding) = encoding {
+        out.extend_from_slice(b"encoding ");
+        out.extend_from_slice(encoding.as_ref());
+        out.push(b'\n');
+    }
+    out.push(b'\n');
+    out.extend_from_slice(message.as_ref());
+    out
 }
 
 fn cleanup_dco(message: BString) -> BString {
@@ -388,10 +449,53 @@ fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) ->
     })?;
 
     if changed {
-        Ok(editor.write()?.detach())
+        let new_tree = editor.write()?.detach();
+        normalize_tree(repo, new_tree)
     } else {
         Ok(tree_id)
     }
+}
+
+fn normalize_tree(repo: &gix::Repository, tree_id: ObjectId) -> Result<ObjectId> {
+    let tree = repo.find_tree(tree_id)?;
+    let mut entries = Vec::new();
+    let mut changed = false;
+
+    for entry in tree.iter() {
+        let entry = entry?;
+        let mut oid = entry.oid().to_owned();
+        if entry.mode().is_tree() {
+            let new_subtree = normalize_tree(repo, oid)?;
+            if new_subtree != oid {
+                changed = true;
+                oid = new_subtree;
+            }
+        }
+
+        let mode_value = entry.mode().value();
+        let normalized_mode = gix_object::tree::EntryMode::try_from(mode_value as u32).unwrap_or(entry.mode());
+        if normalized_mode != entry.mode() {
+            changed = true;
+        }
+
+        entries.push(gix_object::tree::Entry {
+            mode: normalized_mode,
+            filename: entry.filename().to_owned(),
+            oid,
+        });
+    }
+
+    if !changed {
+        return Ok(tree_id);
+    }
+
+    entries.sort();
+    let tree_obj = TreeObject { entries };
+    let new_id = repo
+        .write_object(&tree_obj)
+        .map_err(|err| anyhow!(err))?
+        .detach();
+    Ok(new_id)
 }
 
 fn walk_tree(
@@ -569,12 +673,15 @@ fn rewrite_tag(
     if let Some(existing) = tag_map.get(&tag_id) {
         return Ok(*existing);
     }
-    let tag = repo.find_tag(tag_id)?;
-    let decoded = tag.decode()?;
-    let mut target = decoded.target();
-    let mut target_kind = decoded.target_kind;
+    let object = repo.find_object(tag_id)?;
+    if object.kind != ObjectKind::Tag {
+        return Err(anyhow!("Expected tag object, got {:?}", object.kind));
+    }
+    let raw_tag = parse_tag_object(&object.data)?;
+    let mut target = raw_tag.target;
+    let mut target_kind = raw_tag.target_kind;
 
-    match decoded.target_kind {
+    match raw_tag.target_kind {
         ObjectKind::Commit => {
             target = commit_map
                 .get(&target)
@@ -587,19 +694,94 @@ fn rewrite_tag(
         }
         _ => {}
     }
-
-    let tagger = decoded.tagger()?.map(|sig| sig.to_owned()).transpose()?;
-    let new_tag = TagObject {
-        target,
-        target_kind,
-        name: decoded.name.to_owned(),
-        tagger,
-        message: decoded.message.to_owned(),
-        pgp_signature: None,
-    };
-    let new_id = repo.write_object(&new_tag)?.detach();
+    let tag_bytes = build_tag_bytes(target, target_kind, raw_tag.name, raw_tag.tagger, raw_tag.message);
+    let new_id = repo
+        .write_buf(ObjectKind::Tag, &tag_bytes)
+        .map_err(|err| anyhow!(err))?;
     tag_map.insert(tag_id, new_id);
     Ok(new_id)
+}
+
+struct RawTag<'a> {
+    target: ObjectId,
+    target_kind: ObjectKind,
+    name: &'a [u8],
+    tagger: Option<&'a [u8]>,
+    message: &'a [u8],
+}
+
+fn parse_tag_object(data: &[u8]) -> Result<RawTag<'_>> {
+    let header_end = data
+        .windows(2)
+        .position(|win| win == b"\n\n")
+        .ok_or_else(|| anyhow!("Invalid tag object: missing header terminator"))?;
+    let header = &data[..header_end];
+    let body = &data[header_end + 2..];
+
+    let mut target: Option<ObjectId> = None;
+    let mut target_kind: Option<ObjectKind> = None;
+    let mut name: Option<&[u8]> = None;
+    let mut tagger: Option<&[u8]> = None;
+
+    for line in header.split(|b| *b == b'\n') {
+        if line.is_empty() {
+            continue;
+        }
+        let mut iter = line.splitn(2, |b| *b == b' ');
+        let key = iter.next().unwrap_or_default();
+        let value = iter.next().unwrap_or_default();
+        match key {
+            b"object" => target = Some(ObjectId::from_hex(value)?),
+            b"type" => {
+                target_kind = Some(ObjectKind::from_bytes(value)?)
+            }
+            b"tag" => name = Some(value),
+            b"tagger" => tagger = Some(value),
+            _ => {}
+        }
+    }
+
+    let marker = b"\n-----BEGIN PGP SIGNATURE-----";
+    let message = if let Some(pos) = body.windows(marker.len()).position(|win| win == marker) {
+        &body[..pos + 1]
+    } else {
+        body
+    };
+
+    Ok(RawTag {
+        target: target.ok_or_else(|| anyhow!("Invalid tag object: missing object"))?,
+        target_kind: target_kind.ok_or_else(|| anyhow!("Invalid tag object: missing type"))?,
+        name: name.ok_or_else(|| anyhow!("Invalid tag object: missing tag name"))?,
+        tagger,
+        message,
+    })
+}
+
+fn build_tag_bytes(
+    target: ObjectId,
+    target_kind: ObjectKind,
+    name: &[u8],
+    tagger: Option<&[u8]>,
+    message: &[u8],
+) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(b"object ");
+    out.extend_from_slice(target.to_string().as_bytes());
+    out.push(b'\n');
+    out.extend_from_slice(b"type ");
+    out.extend_from_slice(target_kind.as_bytes());
+    out.push(b'\n');
+    out.extend_from_slice(b"tag ");
+    out.extend_from_slice(name);
+    out.push(b'\n');
+    if let Some(tagger) = tagger {
+        out.extend_from_slice(b"tagger ");
+        out.extend_from_slice(tagger);
+        out.push(b'\n');
+    }
+    out.push(b'\n');
+    out.extend_from_slice(message);
+    out
 }
 
 fn update_reference(reference: &mut Reference<'_>, new_target: ObjectId) -> Result<()> {

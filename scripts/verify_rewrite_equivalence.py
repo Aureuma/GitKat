@@ -157,6 +157,8 @@ if rename_files and filename:
     filename = new_filename
 
 contents = value.get_contents_by_identifier(blob_id)
+if contents is None:
+    return (filename, mode, blob_id)
 if value.is_binary(contents):
     return (filename, mode, blob_id)
 

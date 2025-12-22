@@ -5,6 +5,7 @@
 - Replaced `gk rewrite` to use a Rust gitoxide (gix) rewriter instead of git-filter-repo.
 - Added an equivalence test harness that compares gix rewrites against git-filter-repo.
 - Expanded real-world rewrite verification repositories and added a CI check for the smaller verification set.
+- Normalized tree entry modes and tag message handling to match git-filter-repo output for signed tags.
 
 ## 0.4.0
 
