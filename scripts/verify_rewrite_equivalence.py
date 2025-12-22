@@ -14,6 +14,17 @@ REPOS = [
     "https://github.com/octocat/Hello-World.git",
     "https://github.com/githubtraining/hellogitworld.git",
     "https://github.com/github/gitignore.git",
+    "https://github.com/psf/requests.git",
+    "https://github.com/pallets/flask.git",
+    "https://github.com/BurntSushi/ripgrep.git",
+    "https://github.com/tpope/vim-fugitive.git",
+    "https://github.com/serde-rs/serde.git",
+]
+
+CI_REPOS = [
+    "https://github.com/octocat/Hello-World.git",
+    "https://github.com/githubtraining/hellogitworld.git",
+    "https://github.com/github/gitignore.git",
 ]
 
 COMMIT_CALLBACK = """
@@ -342,6 +353,7 @@ def main() -> int:
     parser.add_argument("--workdir", help="Work directory for clones")
     parser.add_argument("--keep-workdir", action="store_true", help="Keep the workdir after completion")
     parser.add_argument("--with-blob", action="store_true", help="Attempt a small blob rewrite based on README")
+    parser.add_argument("--ci", action="store_true", help="Use a smaller CI-safe repo set")
     parser.add_argument("repos", nargs="*", help="Repo URLs to verify")
     args = parser.parse_args()
 
@@ -349,7 +361,10 @@ def main() -> int:
         raise SystemExit("git-filter-repo is required for verification")
 
     repo_root = Path(__file__).resolve().parents[1]
-    repos = args.repos or REPOS
+    if args.repos and args.ci:
+        raise SystemExit("Provide explicit repos or use --ci, not both")
+
+    repos = args.repos or (CI_REPOS if args.ci else REPOS)
     if not repos:
         raise SystemExit("No repositories provided")
 
