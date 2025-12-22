@@ -205,8 +205,8 @@ FILE_INFO_CALLBACK = textwrap.dedent(
             if not printed_path:
                 print(f"{COLOR_PATH}{path_str}{COLOR_RESET}")
                 printed_path = True
-            line_start = snapshot.rfind(b"\n", 0, m.start()) + 1
-            line_end = snapshot.find(b"\n", m.end())
+            line_start = snapshot.rfind(b"\\n", 0, m.start()) + 1
+            line_end = snapshot.find(b"\\n", m.end())
             if line_end == -1:
                 line_end = len(snapshot)
             line_bytes = snapshot[line_start:line_end]

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- Fixed newline escaping in rewrite callbacks for git-filter-repo.
+
 ## 0.3.1
 
 - Fixed git-filter-repo callback indentation for rewrite mappings.
