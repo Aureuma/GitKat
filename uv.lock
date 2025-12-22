@@ -446,12 +446,12 @@ name = "gitkat"
 version = "0.4.0"
 source = { editable = "." }
 dependencies = [
-    { name = "git-filter-repo" },
     { name = "requests" },
 ]
 
 [package.optional-dependencies]
 dev = [
+    { name = "git-filter-repo" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -463,6 +463,7 @@ dev = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "git-filter-repo" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -474,7 +475,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "git-filter-repo", specifier = ">=2.38.0" },
+    { name = "git-filter-repo", marker = "extra == 'dev'", specifier = ">=2.38.0" },
     { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.6.0" },
     { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=9.5.30" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.2" },
@@ -487,6 +488,7 @@ provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "git-filter-repo", specifier = ">=2.38.0" },
     { name = "mkdocs", specifier = ">=1.6.0" },
     { name = "mkdocs-material", specifier = ">=9.5.30" },
     { name = "pytest", specifier = ">=8.3.2" },

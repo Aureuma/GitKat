@@ -10,7 +10,6 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
 dependencies = [
-  "git-filter-repo>=2.38.0",
   "requests>=2.32.3",
 ]
 keywords = ["git", "cli", "history", "rewrite"]
@@ -37,6 +36,7 @@ Repository = "https://github.com/Aureuma/GitKat"
 Changelog = "https://github.com/Aureuma/GitKat/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 dev = [
+  "git-filter-repo>=2.38.0",
   "mkdocs>=1.6.0",
   "mkdocs-material>=9.5.30",
   "pytest>=8.3.2",
@@ -47,6 +47,7 @@ dev = [
 
 [dependency-groups]
 dev = [
+  "git-filter-repo>=2.38.0",
   "mkdocs>=1.6.0",
   "mkdocs-material>=9.5.30",
   "pytest>=8.3.2",

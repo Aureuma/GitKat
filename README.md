@@ -43,12 +43,12 @@ gk github-emails --token YOUR_GITHUB_TOKEN
 - `gk check <name>`: search author and committer names across repos in the current directory.
 - `gk report [path]`: list unique author emails for each repo under a path.
 - `gk push`: force-push the current branch of each repo in the current directory.
-- `gk rewrite`: rewrite identity metadata and/or blob contents using git-filter-repo.
+- `gk rewrite`: rewrite identity metadata and/or blob contents using a Rust gitoxide (gix) rewriter.
 - `gk github-emails --token <token>`: find contribution emails across GitHub repos you can access.
 
 ## Rewrite notes
 
-`gk rewrite` preserves the existing behavior of `rewrite.sh`, including case-aware blob mapping and commit metadata rewrites. It runs `git filter-repo` under the hood, so you need Git and git-filter-repo installed.
+`gk rewrite` preserves the existing behavior of `rewrite.sh`, including case-aware blob mapping and commit metadata rewrites. It builds and runs a Rust helper (gitoxide/gix) on first use, so you need a Rust toolchain (`cargo`) available alongside Git.
 
 Examples:
 

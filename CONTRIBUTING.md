@@ -9,11 +9,15 @@ uv venv
 uv pip install -e . --group dev
 ```
 
+`gk rewrite` builds a Rust helper, so install a Rust toolchain (`cargo`) if you want to run rewrite locally.
+
 ## Running tests
 
 ```sh
 uv run pytest
 ```
+
+The rewrite equivalence test compares against `git-filter-repo`. Install it if you want that verification step to run.
 
 ## Linting
 

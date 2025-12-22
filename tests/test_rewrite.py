@@ -12,7 +12,7 @@ def init_repo(tmp_path: Path, name: str = "repo") -> Path:
     return repo
 
 
-def test_rewrite_builds_env(monkeypatch, git_repo):
+def test_rewrite_builds_options(monkeypatch, git_repo):
     commit_file(
         git_repo,
         "file.txt",
@@ -22,10 +22,10 @@ def test_rewrite_builds_env(monkeypatch, git_repo):
     )
     captured = {}
 
-    def fake_run_filter_repo(repo, env, runner=None):
-        captured["env"] = env
+    def fake_run_gix_rewrite(repo, options, runner=None):
+        captured["options"] = options
 
-    monkeypatch.setattr(rewrite, "_run_filter_repo", fake_run_filter_repo)
+    monkeypatch.setattr(rewrite, "_run_gix_rewrite", fake_run_gix_rewrite)
     monkeypatch.setattr(rewrite, "_capture_remotes", lambda repo: [])
     monkeypatch.setattr(rewrite, "_restore_remotes", lambda repo, remotes: None)
 
@@ -42,12 +42,12 @@ def test_rewrite_builds_env(monkeypatch, git_repo):
 
     exit_code = rewrite.run(opts, Path(git_repo))
     assert exit_code == 0
-    env = captured["env"]
-    assert env["GITKIT_BLOB_MAP"] == "old\tnew"
-    assert "data/*.csv" in env["GITKIT_EXCLUDE_PATTERNS"]
-    assert env["GITKIT_PRESERVE_CASE"] == "1"
-    assert env["GITKIT_IGNORE_CASE"] == "1"
-    assert env["GITKIT_RENAME_FILES"] == "1"
+    options = captured["options"]
+    assert options.blob_map == ["old:new"]
+    assert "data/*.csv" in options.exclude_patterns
+    assert options.preserve_case is True
+    assert options.ignore_case is True
+    assert options.rename_files is True
 
 
 def test_rewrite_requires_old_emails():
@@ -133,21 +133,31 @@ def test_restore_remotes_multiple_fetch_urls(tmp_path: Path, monkeypatch):
     assert any(args[:2] == ["remote", "set-url"] for args in calls)
 
 
-def test_run_filter_repo_invokes_runner(tmp_path: Path):
+def test_run_gix_rewrite_invokes_runner(tmp_path: Path, monkeypatch):
     repo = init_repo(tmp_path, "filter-repo")
     received = {}
+    monkeypatch.setenv("GITKAT_REWRITE_BIN", "/tmp/gitkat-rewrite")
 
-    def fake_runner(cmd, cwd, env, check, text):
+    def fake_runner(cmd, cwd, check, text):
         received["cmd"] = cmd
         received["cwd"] = cwd
-        received["env"] = env
-        commit_path = Path(cmd[cmd.index("--commit-callback") + 1])
-        file_info_path = Path(cmd[cmd.index("--file-info-callback") + 1])
-        assert commit_path.read_text().strip()
-        assert file_info_path.read_text().strip()
 
-    rewrite._run_filter_repo(repo, {"TEST": "1"}, runner=fake_runner)
-    assert received["cmd"][0:2] == ["git", "filter-repo"]
+    rewrite._run_gix_rewrite(
+        repo,
+        rewrite.RewriteOptions(
+            new_name="New Name",
+            new_email="new@example.test",
+            old_emails=["old@example.test"],
+            blob_map=["old:new"],
+            exclude_patterns=["data/*.csv"],
+            preserve_case=True,
+            ignore_case=True,
+            rename_files=True,
+        ),
+        runner=fake_runner,
+    )
+    assert received["cmd"][0] == "/tmp/gitkat-rewrite"
+    assert "--repo" in received["cmd"]
     assert received["cwd"] == repo
 
 

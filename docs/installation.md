@@ -4,7 +4,7 @@
 
 - Python 3.9+
 - Git
-- git-filter-repo (installed via package dependencies)
+- Rust toolchain (cargo) for `gk rewrite`
 
 ## Using uv
 

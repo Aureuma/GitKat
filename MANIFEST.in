@@ -8,3 +8,4 @@ include SECURITY.md
 include SUPPORT.md
 include mkdocs.yml
 recursive-include docs *.md
+recursive-include crates/gitkat-rewrite Cargo.toml Cargo.lock src/*.rs

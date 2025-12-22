@@ -15,6 +15,7 @@ def commit_file(
     message: str = "commit",
 ) -> None:
     file_path = repo / filename
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     file_path.write_text(content, encoding="utf-8")
     subprocess.run(["git", "add", filename], cwd=repo, check=True)
     env = os.environ.copy()

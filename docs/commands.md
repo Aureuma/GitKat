@@ -26,7 +26,7 @@ gk push
 
 ## gk rewrite
 
-Rewrite commit metadata and/or blob content using git-filter-repo. See the rewrite guide for details.
+Rewrite commit metadata and/or blob content using the Rust gitoxide (gix) rewriter. See the rewrite guide for details.
 
 ```sh
 gk rewrite -m olddomain.com:newdomain.com --ignore-case --preserve-case

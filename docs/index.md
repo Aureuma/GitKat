@@ -22,7 +22,7 @@
 - Search commit metadata across many repos.
 - List author emails for auditing.
 - Force-push current branches in bulk.
-- Rewrite history with git-filter-repo, including case-preserving blob replacements.
+- Rewrite history with a Rust gitoxide (gix) rewriter, including case-preserving blob replacements.
 - Query GitHub contribution emails via API.
 
 ## Quick start

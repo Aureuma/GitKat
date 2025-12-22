@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Replaced `gk rewrite` to use a Rust gitoxide (gix) rewriter instead of git-filter-repo.
+- Added an equivalence test harness that compares gix rewrites against git-filter-repo.
+
 ## 0.4.0
 
 - Renamed the project and distribution to GitKat.
