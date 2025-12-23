@@ -89,6 +89,7 @@ exclude_raw = [line for line in os.environ.get("GITKIT_EXCLUDE_PATTERNS", "").sp
 rename_files = os.environ.get("GITKIT_RENAME_FILES", "0") == "1"
 ignore_case = os.environ.get("GITKIT_IGNORE_CASE", "0") == "1"
 preserve_case_enabled = os.environ.get("GITKIT_PRESERVE_CASE", "0") == "1"
+regex_map = os.environ.get("GITKIT_REGEX_MAP", "0") == "1"
 if not raw_pairs:
     return (filename, mode, blob_id)
 
@@ -119,7 +120,10 @@ if patterns is None:
         state["patterns"] = []
     else:
         re_flags = re.IGNORECASE if ignore_case else 0
-        state["patterns"] = [(re.compile(re.escape(old), re_flags), new) for old, new in pairs]
+        if regex_map:
+            state["patterns"] = [(re.compile(old, re_flags), new) for old, new in pairs]
+        else:
+            state["patterns"] = [(re.compile(re.escape(old), re_flags), new) for old, new in pairs]
     patterns = state["patterns"]
 
 if not patterns:
@@ -226,6 +230,8 @@ struct RewriteArgs {
     exclude_patterns: Vec<String>,
     #[arg(short = 'd', long = "delete-path", action = ArgAction::Append)]
     delete_paths: Vec<String>,
+    #[arg(long = "regex")]
+    regex_map: bool,
     #[arg(long)]
     rename_files: bool,
     #[arg(long)]
@@ -256,6 +262,7 @@ struct RewriteOptions {
     blob_map: Vec<String>,
     exclude_patterns: Vec<String>,
     delete_paths: Vec<String>,
+    regex_map: bool,
     preserve_case: bool,
     ignore_case: bool,
     rename_files: bool,
@@ -400,6 +407,7 @@ fn run_rewrite(args: RewriteArgs, base_dir: Option<&Path>) -> Result<i32> {
         blob_map,
         exclude_patterns: split_comma_args(&args.exclude_patterns),
         delete_paths: split_comma_args(&args.delete_paths),
+        regex_map: args.regex_map,
         preserve_case: args.preserve_case,
         ignore_case: args.ignore_case,
         rename_files: args.rename_files,
@@ -573,6 +581,7 @@ fn run_gix_rewrite(repo: &Path, options: &RewriteOptions) -> Result<()> {
         blob_map: options.blob_map.clone(),
         exclude_patterns: options.exclude_patterns.clone(),
         delete_paths: options.delete_paths.clone(),
+        regex_map: options.regex_map,
         preserve_case: options.preserve_case,
         ignore_case: options.ignore_case,
         rename_files: options.rename_files,
@@ -910,6 +919,7 @@ fn run_gitkat(repo: &Path, options: &VerifyOptions) -> Result<()> {
         blob_map: options.blob_map.clone(),
         exclude_patterns: options.exclude.clone(),
         delete_paths: Vec::new(),
+        regex_map: false,
         preserve_case: options.preserve_case,
         ignore_case: options.ignore_case,
         rename_files: options.rename_files,
@@ -940,6 +950,7 @@ fn run_filter_repo(repo: &Path, options: &VerifyOptions) -> Result<()> {
         "GITKIT_PRESERVE_CASE".to_string(),
         if options.preserve_case { "1" } else { "0" }.to_string(),
     );
+    envs.insert("GITKIT_REGEX_MAP".to_string(), "0".to_string());
     envs.insert(
         "GITKIT_IGNORE_CASE".to_string(),
         if options.ignore_case { "1" } else { "0" }.to_string(),

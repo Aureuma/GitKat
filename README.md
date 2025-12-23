@@ -63,6 +63,9 @@ gk rewrite -n "New Name" -e "new@example.test" -o "old@example.test"
 # Blob rewrite with preserved casing and case-insensitive matching
 gk rewrite -m foo:bar --ignore-case --preserve-case
 
+# Regex blob rewrite
+gk rewrite -m "token_[0-9]+:REDACTED" --regex
+
 # Exclude files from blob rewrites
 gk rewrite -m token:REDACTED -x "data/*.csv" -x "vendor/*"
 

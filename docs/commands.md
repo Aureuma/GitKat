@@ -41,6 +41,7 @@ Flags:
 - `-m`: blob mapping `old:new` (repeatable)
 - `-x`: exclude globs from blob rewrites (repeatable)
 - `-d`, `--delete-path`: delete path or glob (repeatable)
+- `--regex`: treat mapping left-hand side as regex
 - `--rename-files`: apply mappings to file paths
 - `--preserve-case`: mirror casing of matches
 - `-i`, `--ignore-case`: match mappings case-insensitively

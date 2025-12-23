@@ -29,6 +29,14 @@ gk rewrite -n "New Name" -e "new@example.test" -o "old@example.test" -O "Old Nam
 gk rewrite -m olddomain.com:newdomain.com -m token:REDACTED
 ```
 
+## Regex mappings
+
+```sh
+gk rewrite -m "token_[0-9]+:REDACTED" --regex
+```
+
+When `--regex` is enabled, the left side of each `-m old:new` mapping is treated as a Rust regex.
+
 ## Case handling
 
 ```sh

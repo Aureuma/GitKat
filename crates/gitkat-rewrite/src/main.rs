@@ -31,6 +31,9 @@ struct Args {
     /// Delete files matching these globs (repeatable).
     #[arg(long = "delete-path")]
     delete_paths: Vec<String>,
+    /// Treat blob mapping patterns as regex.
+    #[arg(long = "regex")]
+    regex_map: bool,
     /// Preserve casing in replacements.
     #[arg(long)]
     preserve_case: bool,
@@ -52,6 +55,7 @@ fn main() -> Result<()> {
         blob_map: args.blob_map,
         exclude_patterns: args.exclude_patterns,
         delete_paths: args.delete_paths,
+        regex_map: args.regex_map,
         preserve_case: args.preserve_case,
         ignore_case: args.ignore_case,
         rename_files: args.rename_files,

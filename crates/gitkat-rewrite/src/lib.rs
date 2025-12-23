@@ -33,6 +33,7 @@ pub struct RewriteConfig {
     pub blob_map: Vec<String>,
     pub exclude_patterns: Vec<String>,
     pub delete_paths: Vec<String>,
+    pub regex_map: bool,
     pub preserve_case: bool,
     pub ignore_case: bool,
     pub rename_files: bool,
@@ -65,7 +66,7 @@ struct Options {
 
 impl Options {
     fn from_config(config: &RewriteConfig) -> Result<Self> {
-        let patterns = parse_patterns(&config.blob_map, config.ignore_case)?;
+        let patterns = parse_patterns(&config.blob_map, config.ignore_case, config.regex_map)?;
         let exclude = build_glob_set(&config.exclude_patterns)?;
         let delete_set = build_glob_set(&config.delete_paths)?;
         let old_emails = config
@@ -106,14 +107,18 @@ impl Options {
     }
 }
 
-fn parse_patterns(entries: &[String], ignore_case: bool) -> Result<Vec<Pattern>> {
+fn parse_patterns(entries: &[String], ignore_case: bool, regex_map: bool) -> Result<Vec<Pattern>> {
     let mut patterns = Vec::new();
     for entry in entries {
         let (old, new) = entry
             .split_once(':')
             .ok_or_else(|| anyhow!("Invalid mapping '{entry}', expected old:new"))?;
-        let escaped = regex::escape(old);
-        let mut builder = RegexBuilder::new(&escaped);
+        let mut builder = if regex_map {
+            RegexBuilder::new(old)
+        } else {
+            let escaped = regex::escape(old);
+            RegexBuilder::new(&escaped)
+        };
         builder.case_insensitive(ignore_case).unicode(false);
         let regex = builder
             .build()
@@ -712,6 +717,39 @@ fn is_title(bytes: &[u8]) -> bool {
 
 fn is_binary(data: &[u8]) -> bool {
     data.contains(&0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn apply_map(config: RewriteConfig, input: &str) -> String {
+        let options = Options::from_config(&config).expect("options");
+        let bytes = input.as_bytes();
+        let out = apply_patterns(bytes, &options).unwrap_or_else(|| bytes.to_vec());
+        String::from_utf8(out).expect("utf8 output")
+    }
+
+    #[test]
+    fn literal_map_escapes_regex_syntax() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\d+:bar".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo123");
+        assert_eq!(output, "foo123");
+    }
+
+    #[test]
+    fn regex_map_honors_patterns() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\d+:bar".to_string()],
+            regex_map: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo123");
+        assert_eq!(output, "bar");
+    }
 }
 
 fn rewrite_references(
