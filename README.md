@@ -97,13 +97,12 @@ Delete paths accept glob patterns and log each removed file in the colored rewri
 ## Development
 
 ```sh
-cargo test --workspace
+gh workflow run tests.yml
+gh run watch --workflow tests.yml --exit-status
 cargo run -p gitkat -- --help
-gk verify-rewrite --ci --with-blob
-mdbook build
 ```
 
-`gk verify-rewrite` compares against `git-filter-repo`; add `--with-bfg` and set `BFG_JAR` to compare blob rewrites against BFG.
+All tests and verification run in GitHub Actions. Local test runs are intentionally avoided to keep CI parity.
 
 ## License
 

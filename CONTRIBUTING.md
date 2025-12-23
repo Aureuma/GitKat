@@ -11,10 +11,11 @@ cargo build --workspace
 ## Running tests
 
 ```sh
-cargo test --workspace
+gh workflow run tests.yml
+gh run watch --workflow tests.yml --exit-status
 ```
 
-The rewrite equivalence test compares against `git-filter-repo`. Install it if you want that verification step to run.
+All tests and verification run in GitHub Actions. Local test runs are intentionally avoided to keep CI parity.
 
 ## Verification tools
 
