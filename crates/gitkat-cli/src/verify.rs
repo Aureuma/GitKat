@@ -1,7 +1,7 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -402,15 +402,8 @@ fn verify_with_bfg(
     run_gitkat(&gix_repo, &blob_only)?;
     run_bfg(&bfg_repo, &options.blob_map, bfg_jar)?;
 
-    let gix_blobs = collect_blob_ids(&gix_repo)?;
-    let bfg_blobs = collect_blob_ids(&bfg_repo)?;
-    if gix_blobs != bfg_blobs {
-        return Err(anyhow!(
-            "Blob set mismatch for {name} (bfg): {} != {}",
-            gix_blobs.len(),
-            bfg_blobs.len()
-        ));
-    }
+    verify_blob_replacements(&gix_repo, &options.blob_map, "gitkat")?;
+    verify_blob_replacements(&bfg_repo, &options.blob_map, "bfg")?;
 
     Ok(())
 }
@@ -568,7 +561,7 @@ fn regexify_blob_map(entries: &[String]) -> Vec<String> {
         .filter_map(|entry| {
             let (old, new) = entry.split_once(':')?;
             let escaped = regex::escape(old);
-            Some(format!("(?:{escaped}):{new}"))
+            Some(format!("{escaped}:{new}"))
         })
         .collect()
 }
@@ -669,19 +662,6 @@ fn fast_export_hash(repo: &Path) -> Result<String> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
-fn collect_blob_ids(repo: &Path) -> Result<BTreeSet<String>> {
-    let output = crate::git_output(["rev-list", "--all", "--objects"], repo)?;
-    let mut blobs = BTreeSet::new();
-    for line in output.lines() {
-        if let Some((id, path)) = line.split_once(' ') {
-            if !path.trim().is_empty() {
-                blobs.insert(id.to_string());
-            }
-        }
-    }
-    Ok(blobs)
-}
-
 fn pick_identity(repo: &Path) -> Result<(String, String, String)> {
     let line = crate::git_output(["log", "-n", "1", "--format=%an%x00%ae"], repo)?;
     let line = line.trim();
@@ -715,4 +695,114 @@ fn pick_blob_map(repo: &Path) -> Result<Vec<String>> {
         }
     }
     Ok(Vec::new())
+}
+
+fn verify_blob_replacements(repo: &Path, blob_map: &[String], label: &str) -> Result<()> {
+    if blob_map.is_empty() {
+        return Ok(());
+    }
+
+    let mut rules = Vec::new();
+    for entry in blob_map {
+        let (old, new) = entry
+            .split_once(':')
+            .ok_or_else(|| anyhow!("Invalid blob mapping '{}': expected old:new", entry))?;
+        rules.push((old.as_bytes().to_vec(), new.as_bytes().to_vec()));
+    }
+
+    let output = crate::git_output(["rev-list", "--all", "--objects"], repo)?;
+    let mut blob_ids = Vec::new();
+    for line in output.lines() {
+        if let Some((id, path)) = line.split_once(' ') {
+            if !path.trim().is_empty() {
+                blob_ids.push(id.to_string());
+            }
+        }
+    }
+    if blob_ids.is_empty() {
+        return Ok(());
+    }
+
+    let mut found_old = vec![false; rules.len()];
+    let mut found_new = rules.iter().map(|(_, new)| new.is_empty()).collect::<Vec<_>>();
+
+    let mut child = Command::new("git")
+        .arg("cat-file")
+        .arg("--batch")
+        .current_dir(repo)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .context("Failed to spawn git cat-file")?;
+
+    {
+        let mut stdin = child.stdin.take().ok_or_else(|| anyhow!("Missing cat-file stdin"))?;
+        for id in &blob_ids {
+            stdin.write_all(id.as_bytes())?;
+            stdin.write_all(b"\n")?;
+        }
+    }
+
+    let mut stdout = child.stdout.take().ok_or_else(|| anyhow!("Missing cat-file stdout"))?;
+    for _ in 0..blob_ids.len() {
+        let mut header = Vec::new();
+        let mut byte = [0u8; 1];
+        loop {
+            if stdout.read_exact(&mut byte).is_err() {
+                return Err(anyhow!("Unexpected end of cat-file output"));
+            }
+            if byte[0] == b'\n' {
+                break;
+            }
+            header.push(byte[0]);
+        }
+        let header_str = String::from_utf8_lossy(&header);
+        let mut header_parts = header_str.split_whitespace();
+        let _id = header_parts.next().unwrap_or_default();
+        let kind = header_parts.next().unwrap_or_default();
+        let size = header_parts
+            .next()
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0);
+
+        if kind != "blob" {
+            continue;
+        }
+
+        let mut data = vec![0u8; size];
+        stdout.read_exact(&mut data)?;
+        stdout.read_exact(&mut byte)?;
+
+        for (idx, (old, new)) in rules.iter().enumerate() {
+            if !found_old[idx] && data.windows(old.len()).any(|win| win == old.as_slice()) {
+                found_old[idx] = true;
+            }
+            if !found_new[idx]
+                && !new.is_empty()
+                && data.windows(new.len()).any(|win| win == new.as_slice())
+            {
+                found_new[idx] = true;
+            }
+        }
+    }
+
+    let status = child.wait()?;
+    if !status.success() {
+        return Err(anyhow!("git cat-file --batch failed"));
+    }
+
+    for (idx, (_old, _new)) in rules.iter().enumerate() {
+        if found_old[idx] {
+            return Err(anyhow!(
+                "Old blob token still present after {label} rewrite"
+            ));
+        }
+        if !found_new[idx] {
+            return Err(anyhow!(
+                "New blob token missing after {label} rewrite"
+            ));
+        }
+    }
+
+    Ok(())
 }
