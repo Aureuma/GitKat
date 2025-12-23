@@ -1,11 +1,11 @@
-<a href="https://github.com/Aureuma/GitKat">
-  <img src="docs/assets/logo.svg" alt="⫷⫸" width="88" height="88">
-</a>
-
 # 𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸
 
-[![CI](https://github.com/Aureuma/GitKat/actions/workflows/ci.yml/badge.svg)](https://github.com/Aureuma/GitKat/actions/workflows/ci.yml)
+[![Checks](https://github.com/Aureuma/GitKat/actions/workflows/checks.yml/badge.svg)](https://github.com/Aureuma/GitKat/actions/workflows/checks.yml)
 [![GitHub](https://img.shields.io/badge/GitHub-Aureuma/GitKat-181717?logo=github&logoColor=white)](https://github.com/Aureuma/GitKat)
+[![crates.io](https://img.shields.io/crates/v/gitkat.svg?logo=rust)](https://crates.io/crates/gitkat)
+[![Homebrew](https://img.shields.io/badge/Homebrew-Aureuma%2Fgitkat-FBB040?logo=homebrew&logoColor=black)](https://github.com/Aureuma/GitKat/blob/main/Formula/gitkat.rb)
+[![npm](https://img.shields.io/npm/v/@aureuma/gitkat?logo=npm)](https://www.npmjs.com/package/@aureuma/gitkat)
+[![PyPI](https://img.shields.io/pypi/v/gitkat?logo=pypi&logoColor=white)](https://pypi.org/project/gitkat/)
 
 𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ (GitKat) is a Rust toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
 
