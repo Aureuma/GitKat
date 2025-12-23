@@ -13,15 +13,19 @@
 
 ```sh
 # crates.io
-cargo install gitkat
+cargo install gitkat --locked
 
-# Homebrew (tap this repo)
-brew install Aureuma/gitkat/gitkat
+# Homebrew
+brew tap Aureuma/gitkat
+brew install gitkat
 
 # npm
 npm install -g @aureuma/gitkat
 
-# pip (Python wrapper downloads the Rust binary)
+# pipx (recommended)
+pipx install gitkat
+
+# pip
 python -m pip install gitkat
 
 # local builds
@@ -29,7 +33,7 @@ cargo build --release
 ./target/release/gk --help
 ```
 
-The pip/npm wrappers download the Rust binary from GitHub Releases on first run. Set `GITKAT_RELEASE_BASE` to override the download base URL.
+The pip/npm wrappers download the Rust binary from GitHub Releases on first run. Set `GITKAT_RELEASE_BASE` to override the download base URL. The pip wrapper respects `GITKAT_CACHE_DIR`.
 
 ## Quick start
 

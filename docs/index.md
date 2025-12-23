@@ -37,15 +37,19 @@ gk github-emails --token YOUR_GITHUB_TOKEN
 
 ```sh
 # crates.io
-cargo install gitkat
+cargo install gitkat --locked
 
-# Homebrew (tap this repo)
-brew install Aureuma/gitkat/gitkat
+# Homebrew
+brew tap Aureuma/gitkat
+brew install gitkat
 
 # npm
 npm install -g @aureuma/gitkat
 
-# pip (Python wrapper downloads the Rust binary)
+# pipx (recommended)
+pipx install gitkat
+
+# pip
 python -m pip install gitkat
 ```
 

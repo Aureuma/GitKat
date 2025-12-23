@@ -6,21 +6,38 @@
 - Rust toolchain (cargo) for building from source
 - `git-filter-repo` (optional, for `gk verify-rewrite`)
 
-```sh
-# crates.io
-cargo install gitkat
+## Package managers
 
-# Homebrew (tap this repo)
-brew install Aureuma/gitkat/gitkat
+```sh
+# crates.io (Rust)
+cargo install gitkat --locked
+
+# Homebrew
+brew tap Aureuma/gitkat
+brew install gitkat
 
 # npm
 npm install -g @aureuma/gitkat
 
-# pip (Python wrapper downloads the Rust binary)
-python -m pip install gitkat
+# pipx (recommended for CLI tools)
+pipx install gitkat
 
-# local builds
-cargo build --release
+# pip
+python -m pip install gitkat
+```
+
+## GitHub Releases
+
+Download the binary that matches your OS/arch from:
+
+https://github.com/Aureuma/GitKat/releases
+
+Extract it and place `gk` on your `PATH`.
+
+## Build from source
+
+```sh
+cargo build --release -p gitkat
 ./target/release/gk --help
 ```
 
