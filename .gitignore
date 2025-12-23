@@ -16,3 +16,4 @@ dist/
 site/
 book/
 target/
+node_modules/

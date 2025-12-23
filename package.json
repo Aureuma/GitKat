@@ -1,0 +1,30 @@
+{
+  "name": "@aureuma/gitkat",
+  "version": "0.5.1",
+  "description": "GitKat CLI (Rust binary)",
+  "license": "MIT",
+  "bin": {
+    "gk": "bin/gk.js"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Aureuma/GitKat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Aureuma/GitKat/issues"
+  },
+  "homepage": "https://github.com/Aureuma/GitKat",
+  "scripts": {
+    "install": "node scripts/install.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.12",
+    "tar": "^7.4.0"
+  }
+}

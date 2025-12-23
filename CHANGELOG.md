@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.5.1
+
+- Added packaging scaffolding for crates.io, Homebrew, npm, and PyPI installs.
+
 ## 0.5.0
 
 - Rebuilt the `gk` CLI in Rust and removed the Python packaging/runtime.

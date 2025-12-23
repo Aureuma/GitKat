@@ -27,4 +27,4 @@ jobs:
       - name: Install git-filter-repo
         run: sudo apt-get update && sudo apt-get install -y git-filter-repo
       - name: Verify rewrite equivalence
-        run: cargo run -p gitkat-cli -- verify-rewrite --ci --with-blob
+        run: cargo run -p gitkat -- verify-rewrite --ci --with-blob
