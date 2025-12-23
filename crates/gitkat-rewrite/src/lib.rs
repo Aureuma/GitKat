@@ -13,6 +13,12 @@ use gix_object::{CommitRef, Kind as ObjectKind, Tree as TreeObject, Write};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use regex::bytes::{Regex, RegexBuilder};
 
+const CTX_WORDS: usize = 2;
+const COLOR_PATH: &str = "\x1b[95m";
+const COLOR_MATCH: &str = "\x1b[31m";
+const COLOR_REPL: &str = "\x1b[34m";
+const COLOR_RESET: &str = "\x1b[0m";
+
 fn commit_id_regex() -> &'static Regex {
     static REGEX: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     REGEX.get_or_init(|| Regex::new(r"[0-9a-f]{7,40}").expect("valid commit-id regex"))
@@ -375,9 +381,9 @@ fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) ->
     let mut changed = false;
 
     walk_tree(repo, &tree, &mut path, &mut |path_bytes, entry| {
-        let path_str = String::from_utf8_lossy(path_bytes);
+        let mut path_str = String::from_utf8_lossy(path_bytes).to_string();
         if let Some(exclude) = &options.exclude {
-            if exclude.is_match(path_str.as_ref()) {
+            if exclude.is_match(path_str.as_str()) {
                 return Ok(());
             }
         }
@@ -386,7 +392,10 @@ fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) ->
         if options.rename_files {
             if let Some(updated) = apply_patterns(&new_path, options) {
                 if updated != new_path {
+                    let new_path_str = String::from_utf8_lossy(&updated).to_string();
+                    log_rename(&path_str, &new_path_str);
                     new_path = updated;
+                    path_str = new_path_str;
                 }
             }
         }
@@ -403,7 +412,7 @@ fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) ->
                 return Ok(());
             }
             let mut new_blob_id = entry_id;
-            if let Some(updated) = apply_patterns(&blob.data, options) {
+            if let Some(updated) = apply_patterns_with_log(&blob.data, &path_str, options) {
                 if updated != blob.data {
                     new_blob_id = repo.write_blob(&updated)?.detach();
                     changed = true;
@@ -523,6 +532,44 @@ fn apply_patterns(input: &[u8], options: &Options) -> Option<Vec<u8>> {
     if changed { Some(data) } else { None }
 }
 
+fn apply_patterns_with_log(input: &[u8], path: &str, options: &Options) -> Option<Vec<u8>> {
+    if options.patterns.is_empty() {
+        return None;
+    }
+    let mut data = input.to_vec();
+    let mut changed = false;
+
+    for pattern in &options.patterns {
+        let mut matched = false;
+        let mut new_data = Vec::with_capacity(data.len());
+        let mut last = 0;
+
+        for mat in pattern.regex.find_iter(&data) {
+            matched = true;
+            let start = mat.start();
+            let end = mat.end();
+            let matched_bytes = &data[start..end];
+            let repl = if options.preserve_case {
+                Cow::Owned(preserve_case(matched_bytes, &pattern.replacement))
+            } else {
+                Cow::Borrowed(pattern.replacement.as_slice())
+            };
+            new_data.extend_from_slice(&data[last..start]);
+            new_data.extend_from_slice(repl.as_ref());
+            log_replacement(path, &data, start, end, repl.as_ref());
+            last = end;
+        }
+
+        if matched {
+            new_data.extend_from_slice(&data[last..]);
+            data = new_data;
+            changed = true;
+        }
+    }
+
+    if changed { Some(data) } else { None }
+}
+
 fn preserve_case(matched: &[u8], replacement: &[u8]) -> Vec<u8> {
     if replacement.is_empty() {
         return Vec::new();
@@ -555,6 +602,62 @@ fn preserve_case(matched: &[u8], replacement: &[u8]) -> Vec<u8> {
         }
     }
     out
+}
+
+fn log_rename(old_path: &str, new_path: &str) {
+    println!("{}{}{}", COLOR_PATH, old_path, COLOR_RESET);
+    println!(
+        "{}{}{} -> {}{}{}",
+        COLOR_PATH, old_path, COLOR_RESET, COLOR_PATH, new_path, COLOR_RESET
+    );
+}
+
+fn log_replacement(path: &str, snapshot: &[u8], start: usize, end: usize, repl: &[u8]) {
+    let line_start = snapshot[..start]
+        .iter()
+        .rposition(|&b| b == b'\n')
+        .map(|pos| pos + 1)
+        .unwrap_or(0);
+    let line_end = snapshot[end..]
+        .iter()
+        .position(|&b| b == b'\n')
+        .map(|pos| end + pos)
+        .unwrap_or(snapshot.len());
+
+    let prefix = String::from_utf8_lossy(&snapshot[line_start..start]);
+    let suffix = String::from_utf8_lossy(&snapshot[end..line_end]);
+    let match_text = String::from_utf8_lossy(&snapshot[start..end]);
+    let repl_text = String::from_utf8_lossy(repl);
+
+    let (left_line, right_line) = extract_context(&prefix, &suffix, &match_text, &repl_text);
+    println!("{}{}{}", COLOR_PATH, path, COLOR_RESET);
+    println!("{left_line} -> {right_line}");
+}
+
+fn extract_context(prefix: &str, suffix: &str, match_text: &str, repl_text: &str) -> (String, String) {
+    let pre_words: Vec<&str> = prefix.split_whitespace().collect();
+    let post_words: Vec<&str> = suffix.split_whitespace().collect();
+
+    let left_words = if pre_words.len() > CTX_WORDS {
+        &pre_words[pre_words.len() - CTX_WORDS..]
+    } else {
+        pre_words.as_slice()
+    };
+    let right_words = if post_words.len() > CTX_WORDS {
+        &post_words[..CTX_WORDS]
+    } else {
+        post_words.as_slice()
+    };
+
+    let left = left_words.join(" ");
+    let right = right_words.join(" ");
+    let left = if left.is_empty() { String::new() } else { format!("{left} ") };
+    let right = if right.is_empty() { String::new() } else { format!(" {right}") };
+
+    let left_line = format!("{left}{COLOR_MATCH}{match_text}{COLOR_RESET}{right}");
+    let right_line = format!("{left}{COLOR_REPL}{repl_text}{COLOR_RESET}{right}");
+
+    (left_line.trim().to_string(), right_line.trim().to_string())
 }
 
 fn is_upper(bytes: &[u8]) -> bool {
