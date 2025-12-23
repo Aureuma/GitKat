@@ -5,27 +5,17 @@
 # 𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸
 
 [![CI](https://github.com/Aureuma/GitKat/actions/workflows/ci.yml/badge.svg)](https://github.com/Aureuma/GitKat/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/GitKat.svg?logo=pypi&logoColor=white)](https://pypi.org/project/GitKat/)
-[![codecov](https://codecov.io/gh/Aureuma/GitKat/branch/main/graph/badge.svg)](https://codecov.io/gh/Aureuma/GitKat)
 [![GitHub](https://img.shields.io/badge/GitHub-Aureuma/GitKat-181717?logo=github&logoColor=white)](https://github.com/Aureuma/GitKat)
 
-𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ (GitKat) is a Python toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
+𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ (GitKat) is a Rust toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
 
 ## Install
 
-Using uv:
-
 ```sh
-uv venv
-uv pip install -e .
-```
-
-Using pip:
-
-```sh
-python -m venv .venv
-. .venv/bin/activate
-pip install -e .
+cargo install --path .
+# or for local builds
+cargo build --release
+./target/release/gk --help
 ```
 
 ## Quick start
@@ -45,10 +35,11 @@ gk github-emails --token YOUR_GITHUB_TOKEN
 - `gk push`: force-push the current branch of each repo in the current directory.
 - `gk rewrite`: rewrite identity metadata and/or blob contents using a Rust gitoxide (gix) rewriter.
 - `gk github-emails --token <token>`: find contribution emails across GitHub repos you can access.
+- `gk verify-rewrite`: compare rewrite output against `git-filter-repo` across real repositories.
 
 ## Rewrite notes
 
-`gk rewrite` preserves the existing behavior of `rewrite.sh`, including case-aware blob mapping and commit metadata rewrites. It builds and runs a Rust helper (gitoxide/gix) on first use, so you need a Rust toolchain (`cargo`) available alongside Git.
+`gk rewrite` preserves the existing behavior of `rewrite.sh`, including case-aware blob mapping and commit metadata rewrites. The rewrite engine is implemented directly in Rust using gitoxide (gix).
 
 Examples:
 
@@ -69,17 +60,12 @@ gk rewrite -m oldname:newname --rename-files
 ## Development
 
 ```sh
-uv pip install -e .
-uv pip install -e . --group dev
-uv run pytest
-uv run mkdocs serve
+cargo test --workspace
+cargo run -p gitkat-cli -- --help
+gk verify-rewrite --ci --with-blob
 ```
 
-Coverage (latest local run):
-
-```sh
-uv run pytest --cov=gitkat --cov-report=term-missing
-```
+`gk verify-rewrite` compares against `git-filter-repo`, so install it if you want equivalence checks.
 
 ## License
 

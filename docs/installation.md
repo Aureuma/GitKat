@@ -2,22 +2,13 @@
 
 ## Requirements
 
-- Python 3.9+
 - Git
-- Rust toolchain (cargo) for `gk rewrite`
-
-## Using uv
-
-```sh
-uv venv
-uv pip install -e .
-uv pip install -e . --group dev
-```
-
-## Using pip
+- Rust toolchain (cargo)
+- `git-filter-repo` (optional, for `gk verify-rewrite`)
 
 ```sh
-python -m venv .venv
-. .venv/bin/activate
-pip install -e .
+cargo install --path .
+# or for local builds
+cargo build --release
+./target/release/gk --help
 ```

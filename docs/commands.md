@@ -39,3 +39,11 @@ Find contribution emails for repositories you can access on GitHub.
 ```sh
 gk github-emails --token YOUR_GITHUB_TOKEN
 ```
+
+## gk verify-rewrite
+
+Compare GitKat rewrite output against `git-filter-repo` across real repositories.
+
+```sh
+gk verify-rewrite --ci --with-blob
+```

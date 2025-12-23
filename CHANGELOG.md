@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Rebuilt the `gk` CLI in Rust and removed the Python packaging/runtime.
 - Replaced `gk rewrite` to use a Rust gitoxide (gix) rewriter instead of git-filter-repo.
 - Added an equivalence test harness that compares gix rewrites against git-filter-repo.
 - Expanded real-world rewrite verification repositories and added a CI check for the smaller verification set.

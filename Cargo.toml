@@ -1,0 +1,6 @@
+[workspace]
+members = [
+  "crates/gitkat-cli",
+  "crates/gitkat-rewrite",
+]
+resolver = "2"

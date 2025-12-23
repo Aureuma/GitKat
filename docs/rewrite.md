@@ -47,4 +47,4 @@ gk rewrite -m oldname:newname --rename-files
 - Running from a directory containing multiple repos rewrites each child repo.
 - Running inside a repo rewrites only that repo.
 - After verifying, force-push rewritten history.
-- `gk rewrite` builds a Rust helper on first run, so a Rust toolchain (`cargo`) is required.
+- The rewrite engine runs in-process via gitoxide (gix).

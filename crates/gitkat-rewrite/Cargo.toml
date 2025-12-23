@@ -3,6 +3,14 @@ name = "gitkat-rewrite"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "gitkat_rewrite"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gitkat-rewrite"
+path = "src/main.rs"
+
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }

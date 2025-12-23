@@ -5,16 +5,13 @@ Thanks for helping improve GitKat.
 ## Local setup
 
 ```sh
-uv venv
-uv pip install -e . --group dev
+cargo build --workspace
 ```
-
-`gk rewrite` builds a Rust helper, so install a Rust toolchain (`cargo`) if you want to run rewrite locally.
 
 ## Running tests
 
 ```sh
-uv run pytest
+cargo test --workspace
 ```
 
 The rewrite equivalence test compares against `git-filter-repo`. Install it if you want that verification step to run.
@@ -22,13 +19,7 @@ The rewrite equivalence test compares against `git-filter-repo`. Install it if y
 ## Linting
 
 ```sh
-uv run ruff check src tests
-```
-
-## Docs
-
-```sh
-uv run mkdocs serve
+cargo fmt --check
 ```
 
 ## Pull requests

@@ -1,0 +1,19 @@
+[package]
+name = "gitkat-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "gk"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+gitkat-rewrite = { path = "../gitkat-rewrite" }
+regex = "1.10"
+reqwest = { version = "0.12", features = ["blocking", "json", "rustls-tls"] }
+serde = { version = "1.0", features = ["derive"] }
+sha2 = "0.10"
+tempfile = "3.10"
+walkdir = "2.5"

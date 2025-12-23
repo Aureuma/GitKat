@@ -8,14 +8,11 @@
   <a href="https://github.com/Aureuma/GitKat">
     <img alt="GitHub" src="https://img.shields.io/badge/GitHub-Aureuma/GitKat-181717?logo=github&logoColor=white">
   </a>
-  <a href="https://pypi.org/project/GitKat/">
-    <img alt="PyPI" src="https://img.shields.io/pypi/v/GitKat.svg?logo=pypi&logoColor=white">
-  </a>
 </p>
 
 # 𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸
 
-𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ (GitKat) is a Python CLI for bulk Git repository maintenance. It keeps the behavior of the original shell tooling while adding packaging, tests, and documentation.
+𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ (GitKat) is a Rust CLI for bulk Git repository maintenance. It keeps the behavior of the original shell tooling while adding packaged, testable workflows.
 
 ## Highlights
 
