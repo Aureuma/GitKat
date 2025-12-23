@@ -2,6 +2,10 @@
 name = "gitkat-rewrite"
 version = "0.5.2"
 edition = "2021"
+description = "GitKat git history rewrite engine built on gitoxide"
+license = "MIT"
+repository = "https://github.com/Aureuma/GitKat"
+readme = "../../README.md"
 
 [lib]
 name = "gitkat_rewrite"
