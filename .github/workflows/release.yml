@@ -98,11 +98,11 @@ jobs:
       - name: Publish rewrite crate
         run: cargo publish -p gitkat-rewrite
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.ACTIONS_RELEASE_TOKEN }}
       - name: Publish CLI crate
         run: cargo publish -p gitkat
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.ACTIONS_RELEASE_TOKEN }}
 
   publish-pypi:
     runs-on: ubuntu-latest
