@@ -38,7 +38,7 @@ Flags:
 - `-e`: new author/committer email
 - `-o`: old emails to match (repeatable, comma-separated)
 - `-O`: old author/committer name to require
-- `-m`: blob mapping `old:new` (repeatable)
+- `-m`: blob mapping `old:new` (repeatable, escape `:` as `\\:`)
 - `-x`: exclude globs from blob rewrites (repeatable)
 - `-d`, `--delete-path`: delete path or glob (repeatable)
 - `--regex`: treat mapping left-hand side as regex

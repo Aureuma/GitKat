@@ -29,6 +29,12 @@ gk rewrite -n "New Name" -e "new@example.test" -o "old@example.test" -O "Old Nam
 gk rewrite -m olddomain.com:newdomain.com -m token:REDACTED
 ```
 
+Escape literal colons in mappings with `\\:`:
+
+```sh
+gk rewrite -m "foo\\:bar:baz"
+```
+
 ## Regex mappings
 
 ```sh

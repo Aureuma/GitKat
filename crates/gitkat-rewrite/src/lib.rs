@@ -45,6 +45,34 @@ pub struct RewriteStats {
     pub tags: usize,
 }
 
+pub fn parse_mapping(entry: &str) -> Result<(String, String)> {
+    let mut escape = false;
+    let mut split_idx = None;
+    for (idx, ch) in entry.char_indices() {
+        if escape {
+            escape = false;
+            continue;
+        }
+        if ch == '\\' {
+            escape = true;
+            continue;
+        }
+        if ch == ':' {
+            split_idx = Some(idx);
+            break;
+        }
+    }
+    let Some(split_idx) = split_idx else {
+        return Err(anyhow!("Invalid mapping '{entry}', expected old:new"));
+    };
+
+    let (old_raw, new_raw) = entry.split_at(split_idx);
+    let new_raw = &new_raw[1..];
+    let old = unescape_mapping(old_raw);
+    let new = unescape_mapping(new_raw);
+    Ok((old, new))
+}
+
 #[derive(Clone, Debug)]
 struct Pattern {
     regex: Regex,
@@ -110,13 +138,11 @@ impl Options {
 fn parse_patterns(entries: &[String], ignore_case: bool, regex_map: bool) -> Result<Vec<Pattern>> {
     let mut patterns = Vec::new();
     for entry in entries {
-        let (old, new) = entry
-            .split_once(':')
-            .ok_or_else(|| anyhow!("Invalid mapping '{entry}', expected old:new"))?;
+        let (old, new) = parse_mapping(entry)?;
         let mut builder = if regex_map {
-            RegexBuilder::new(old)
+            RegexBuilder::new(&old)
         } else {
-            let escaped = regex::escape(old);
+            let escaped = regex::escape(&old);
             RegexBuilder::new(&escaped)
         };
         builder.case_insensitive(ignore_case).unicode(false);
@@ -125,10 +151,36 @@ fn parse_patterns(entries: &[String], ignore_case: bool, regex_map: bool) -> Res
             .with_context(|| format!("Invalid regex for '{old}'"))?;
         patterns.push(Pattern {
             regex,
-            replacement: new.as_bytes().to_vec(),
+            replacement: new.into_bytes(),
         });
     }
     Ok(patterns)
+}
+
+fn unescape_mapping(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    let mut escape = false;
+    for ch in input.chars() {
+        if escape {
+            if ch == ':' || ch == '\\' {
+                out.push(ch);
+            } else {
+                out.push('\\');
+                out.push(ch);
+            }
+            escape = false;
+            continue;
+        }
+        if ch == '\\' {
+            escape = true;
+            continue;
+        }
+        out.push(ch);
+    }
+    if escape {
+        out.push('\\');
+    }
+    out
 }
 
 fn build_glob_set(patterns: &[String]) -> Result<Option<GlobSet>> {
@@ -795,6 +847,16 @@ mod tests {
             ..Default::default()
         };
         assert!(Options::from_config(&config).is_err());
+    }
+
+    #[test]
+    fn mapping_allows_literal_colon() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\:bar:baz".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo:bar");
+        assert_eq!(output, "baz");
     }
 }
 

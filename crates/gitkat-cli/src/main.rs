@@ -405,9 +405,7 @@ fn split_comma_args(values: &[String]) -> Vec<String> {
 fn parse_blob_map(entries: &[String]) -> Result<Vec<String>> {
     let mut parsed = Vec::new();
     for entry in entries {
-        if !entry.contains(':') {
-            return Err(anyhow!("Invalid -m entry '{}'. Expected old:new.", entry));
-        }
+        gitkat_rewrite::parse_mapping(entry)?;
         parsed.push(entry.clone());
     }
     Ok(parsed)

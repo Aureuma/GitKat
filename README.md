@@ -70,6 +70,9 @@ gk rewrite -m foo:bar --ignore-case --preserve-case
 # Regex blob rewrite
 gk rewrite -m "token_[0-9]+:REDACTED" --regex
 
+# Escape literal colons in mappings
+gk rewrite -m "foo\\:bar:baz"
+
 # Exclude files from blob rewrites
 gk rewrite -m token:REDACTED -x "data/*.csv" -x "vendor/*"
 

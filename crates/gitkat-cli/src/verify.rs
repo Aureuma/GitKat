@@ -547,9 +547,7 @@ fn serialize_lines(values: &[String]) -> String {
 fn build_blob_map_env(entries: &[String]) -> Result<String> {
     let mut lines = Vec::new();
     for entry in entries {
-        let (old, new) = entry
-            .split_once(':')
-            .ok_or_else(|| anyhow!("Invalid blob mapping '{}': expected old:new", entry))?;
+        let (old, new) = gitkat_rewrite::parse_mapping(entry)?;
         lines.push(format!("{}\t{}", old, new));
     }
     Ok(lines.join("\n"))
@@ -559,8 +557,8 @@ fn regexify_blob_map(entries: &[String]) -> Vec<String> {
     entries
         .iter()
         .filter_map(|entry| {
-            let (old, new) = entry.split_once(':')?;
-            let escaped = regex::escape(old);
+            let (old, new) = gitkat_rewrite::parse_mapping(entry).ok()?;
+            let escaped = regex::escape(&old);
             Some(format!("{escaped}:{new}"))
         })
         .collect()
@@ -569,9 +567,7 @@ fn regexify_blob_map(entries: &[String]) -> Vec<String> {
 fn build_bfg_replace_text(entries: &[String]) -> Result<String> {
     let mut lines = Vec::new();
     for entry in entries {
-        let (old, new) = entry
-            .split_once(':')
-            .ok_or_else(|| anyhow!("Invalid blob mapping '{}': expected old:new", entry))?;
+        let (old, new) = gitkat_rewrite::parse_mapping(entry)?;
         lines.push(format!("{old}==>{new}"));
     }
     Ok(lines.join("\n"))
@@ -704,10 +700,8 @@ fn verify_blob_replacements(repo: &Path, blob_map: &[String], label: &str) -> Re
 
     let mut rules = Vec::new();
     for entry in blob_map {
-        let (old, new) = entry
-            .split_once(':')
-            .ok_or_else(|| anyhow!("Invalid blob mapping '{}': expected old:new", entry))?;
-        rules.push((old.as_bytes().to_vec(), new.as_bytes().to_vec()));
+        let (old, new) = gitkat_rewrite::parse_mapping(entry)?;
+        rules.push((old.into_bytes(), new.into_bytes()));
     }
 
     let output = crate::git_output(["rev-list", "--all", "--objects"], repo)?;
