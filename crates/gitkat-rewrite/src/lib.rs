@@ -380,7 +380,7 @@ fn build_commit_bytes(
 }
 
 fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) -> Result<ObjectId> {
-    if options.patterns.is_empty() && !options.rename_files {
+    if options.patterns.is_empty() && !options.rename_files && options.delete_paths.is_empty() {
         return Ok(tree_id);
     }
 
