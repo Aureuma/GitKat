@@ -22,6 +22,12 @@ The rewrite equivalence test compares against `git-filter-repo`. Install it if y
 cargo fmt --check
 ```
 
+## Docs
+
+```sh
+mdbook build
+```
+
 ## Pull requests
 
 - Keep changes focused and describe why they are needed.

@@ -63,6 +63,7 @@ gk rewrite -m oldname:newname --rename-files
 cargo test --workspace
 cargo run -p gitkat-cli -- --help
 gk verify-rewrite --ci --with-blob
+mdbook build
 ```
 
 `gk verify-rewrite` compares against `git-filter-repo`, so install it if you want equivalence checks.

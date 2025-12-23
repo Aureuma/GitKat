@@ -1,0 +1,10 @@
+[book]
+title = "GitKat"
+description = "Bulk Git repository utilities"
+authors = ["Aureuma"]
+src = "docs"
+
+[output.html]
+site-url = "/GitKat/"
+git-repository-url = "https://github.com/Aureuma/GitKat"
+edit-url-template = "https://github.com/Aureuma/GitKat/edit/main/{path}"
