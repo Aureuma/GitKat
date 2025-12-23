@@ -74,6 +74,8 @@ gk rewrite --delete-path "path/to/file.txt"
 gk rewrite --delete-path "assets/**/*.png"
 ```
 
+Delete paths accept glob patterns and log each removed file in the colored rewrite output.
+
 ## Development
 
 ```sh
