@@ -98,11 +98,35 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Publish rewrite crate
-        run: cargo publish -p gitkat-rewrite
+        run: |
+          set -euo pipefail
+          output=$(cargo publish -p gitkat-rewrite 2>&1) || status=$?
+          if [ "${status:-0}" -eq 0 ]; then
+            echo "$output"
+            exit 0
+          fi
+          echo "$output"
+          if echo "$output" | grep -q "already exists"; then
+            echo "gitkat-rewrite already published; continuing"
+            exit 0
+          fi
+          exit ${status:-1}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.ACTIONS_RELEASE_TOKEN }}
       - name: Publish CLI crate
-        run: cargo publish -p gitkat
+        run: |
+          set -euo pipefail
+          output=$(cargo publish -p gitkat 2>&1) || status=$?
+          if [ "${status:-0}" -eq 0 ]; then
+            echo "$output"
+            exit 0
+          fi
+          echo "$output"
+          if echo "$output" | grep -q "already exists"; then
+            echo "gitkat already published; continuing"
+            exit 0
+          fi
+          exit ${status:-1}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.ACTIONS_RELEASE_TOKEN }}
 
