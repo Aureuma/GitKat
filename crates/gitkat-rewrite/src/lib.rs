@@ -739,7 +739,7 @@ fn rewrite_references(
             _ => continue,
         };
         if new_target != target {
-            update_reference(&mut reference, new_target)?;
+            update_reference(repo, &mut reference, new_target)?;
         }
     }
     Ok(())
@@ -877,9 +877,29 @@ fn build_tag_bytes(
     out
 }
 
-fn update_reference(reference: &mut Reference<'_>, new_target: ObjectId) -> Result<()> {
-    reference
+fn update_reference(repo: &gix::Repository, reference: &mut Reference<'_>, new_target: ObjectId) -> Result<()> {
+    if reference
         .set_target_id(new_target, "gitkat rewrite")
-        .with_context(|| format!("Update reference {}", reference.name().as_bstr()))?;
+        .is_ok()
+    {
+        return Ok(());
+    }
+
+    let name = String::from_utf8_lossy(reference.name().as_bstr()).into_owned();
+    let workdir = repo
+        .workdir()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| repo.path().to_path_buf());
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(&workdir)
+        .arg("update-ref")
+        .arg(&name)
+        .arg(new_target.to_string())
+        .status()
+        .with_context(|| format!("Update reference {} (git update-ref)", name))?;
+    if !status.success() {
+        return Err(anyhow!("Update reference {} failed via git update-ref", name));
+    }
     Ok(())
 }
