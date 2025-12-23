@@ -388,6 +388,7 @@ fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) ->
         let mut path_str = String::from_utf8_lossy(path_bytes).to_string();
         if let Some(delete_set) = &options.delete_set {
             if delete_set.is_match(path_str.as_str()) {
+                log_delete(&path_str);
                 editor.remove(BString::from(path_bytes))?;
                 changed = true;
                 return Ok(());
@@ -621,6 +622,11 @@ fn log_rename(old_path: &str, new_path: &str) {
         "{}{}{} -> {}{}{}",
         COLOR_PATH, old_path, COLOR_RESET, COLOR_PATH, new_path, COLOR_RESET
     );
+}
+
+fn log_delete(path: &str) {
+    println!("{}{}{}", COLOR_PATH, path, COLOR_RESET);
+    println!("{}{}{} -> {}[deleted]{}", COLOR_PATH, path, COLOR_RESET, COLOR_REPL, COLOR_RESET);
 }
 
 fn log_replacement(path: &str, snapshot: &[u8], start: usize, end: usize, repl: &[u8]) {
