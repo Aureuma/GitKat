@@ -29,6 +29,6 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Install git-filter-repo
-        run: sudo apt-get update && sudo apt-get install -y git-filter-repo
+        run: python -m pip install --upgrade git-filter-repo
       - name: Verify rewrite equivalence
         run: cargo run -p gitkat -- verify-rewrite --ci --with-blob
