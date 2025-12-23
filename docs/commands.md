@@ -32,6 +32,12 @@ Rewrite commit metadata and/or blob content using the Rust gitoxide (gix) rewrit
 gk rewrite -m olddomain.com:newdomain.com --ignore-case --preserve-case
 ```
 
+Delete a file across history:
+
+```sh
+gk rewrite --delete-path "path/to/file.txt"
+```
+
 ## gk github-emails
 
 Find contribution emails for repositories you can access on GitHub.

@@ -224,6 +224,8 @@ struct RewriteArgs {
     blob_map: Vec<String>,
     #[arg(short = 'x', action = ArgAction::Append)]
     exclude_patterns: Vec<String>,
+    #[arg(short = 'd', long = "delete-path", action = ArgAction::Append)]
+    delete_paths: Vec<String>,
     #[arg(long)]
     rename_files: bool,
     #[arg(long)]
@@ -253,6 +255,7 @@ struct RewriteOptions {
     old_emails: Vec<String>,
     blob_map: Vec<String>,
     exclude_patterns: Vec<String>,
+    delete_paths: Vec<String>,
     preserve_case: bool,
     ignore_case: bool,
     rename_files: bool,
@@ -396,12 +399,13 @@ fn run_rewrite(args: RewriteArgs, base_dir: Option<&Path>) -> Result<i32> {
         old_emails: split_comma_args(&args.old_emails),
         blob_map,
         exclude_patterns: split_comma_args(&args.exclude_patterns),
+        delete_paths: split_comma_args(&args.delete_paths),
         preserve_case: args.preserve_case,
         ignore_case: args.ignore_case,
         rename_files: args.rename_files,
     };
 
-    if opts.old_emails.is_empty() && opts.blob_map.is_empty() {
+    if opts.old_emails.is_empty() && opts.blob_map.is_empty() && opts.delete_paths.is_empty() {
         println!("Error: specify at least one identity rewrite (-o/-e) or blob data mapping (-m).");
         return Ok(1);
     }
@@ -568,6 +572,7 @@ fn run_gix_rewrite(repo: &Path, options: &RewriteOptions) -> Result<()> {
         old_emails: options.old_emails.clone(),
         blob_map: options.blob_map.clone(),
         exclude_patterns: options.exclude_patterns.clone(),
+        delete_paths: options.delete_paths.clone(),
         preserve_case: options.preserve_case,
         ignore_case: options.ignore_case,
         rename_files: options.rename_files,
@@ -586,6 +591,7 @@ fn print_summary(repo: &Path, opts: &RewriteOptions) -> Result<()> {
         println!("Commits now using new email: (identity rewrite skipped)");
     }
     println!("Blob mappings applied:       {}", opts.blob_map.len());
+    println!("Deleted paths:              {}", opts.delete_paths.len());
     println!("Remote(s):");
     let remotes = git_output_or_empty(["remote", "-v"], repo);
     if remotes.trim().is_empty() {
@@ -903,6 +909,7 @@ fn run_gitkat(repo: &Path, options: &VerifyOptions) -> Result<()> {
         old_emails: vec![options.old_email.clone()],
         blob_map: options.blob_map.clone(),
         exclude_patterns: options.exclude.clone(),
+        delete_paths: Vec::new(),
         preserve_case: options.preserve_case,
         ignore_case: options.ignore_case,
         rename_files: options.rename_files,

@@ -41,6 +41,12 @@ gk rewrite -m token:REDACTED -x "data/*.csv" -x "vendor/*"
 gk rewrite -m oldname:newname --rename-files
 ```
 
+## Deleting paths
+
+```sh
+gk rewrite --delete-path "path/to/file.txt"
+```
+
 ## Notes
 
 - Rewrites skip binary blobs.

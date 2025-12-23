@@ -32,6 +32,7 @@ pub struct RewriteConfig {
     pub old_emails: Vec<String>,
     pub blob_map: Vec<String>,
     pub exclude_patterns: Vec<String>,
+    pub delete_paths: Vec<String>,
     pub preserve_case: bool,
     pub ignore_case: bool,
     pub rename_files: bool,
@@ -57,6 +58,7 @@ struct Options {
     old_emails: HashSet<String>,
     patterns: Vec<Pattern>,
     exclude: Option<GlobSet>,
+    delete_paths: HashSet<String>,
     preserve_case: bool,
     rename_files: bool,
 }
@@ -77,6 +79,12 @@ impl Options {
             .map(str::trim)
             .filter(|name| !name.is_empty())
             .map(|name| name.to_lowercase());
+        let delete_paths = config
+            .delete_paths
+            .iter()
+            .map(|path| path.trim().to_string())
+            .filter(|path| !path.is_empty())
+            .collect::<HashSet<_>>();
         let new_name = config
             .new_name
             .as_deref()
@@ -96,6 +104,7 @@ impl Options {
             old_emails,
             patterns,
             exclude,
+            delete_paths,
             preserve_case: config.preserve_case,
             rename_files: config.rename_files,
         })
@@ -382,6 +391,11 @@ fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) ->
 
     walk_tree(repo, &tree, &mut path, &mut |path_bytes, entry| {
         let mut path_str = String::from_utf8_lossy(path_bytes).to_string();
+        if options.delete_paths.contains(&path_str) {
+            editor.remove(BString::from(path_bytes))?;
+            changed = true;
+            return Ok(());
+        }
         if let Some(exclude) = &options.exclude {
             if exclude.is_match(path_str.as_str()) {
                 return Ok(());

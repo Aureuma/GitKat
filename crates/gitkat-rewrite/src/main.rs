@@ -48,6 +48,7 @@ fn main() -> Result<()> {
         old_emails: args.old_emails,
         blob_map: args.blob_map,
         exclude_patterns: args.exclude_patterns,
+        delete_paths: Vec::new(),
         preserve_case: args.preserve_case,
         ignore_case: args.ignore_case,
         rename_files: args.rename_files,
