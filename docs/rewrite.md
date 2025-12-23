@@ -77,11 +77,13 @@ Rewrite output is verbose by default:
 
 ## Verification
 
-To compare rewrite output against `git-filter-repo`:
+To compare rewrite output against `git-filter-repo` and optionally BFG:
 
 ```sh
 gk verify-rewrite --ci --with-blob
 ```
+
+Add `--with-regex` to verify regex mappings. Add `--with-bfg` (and set `BFG_JAR` or pass `--bfg-jar`) to compare blob-only rewrites against BFG.
 
 ## Notes
 

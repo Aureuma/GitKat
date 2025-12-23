@@ -750,6 +750,52 @@ mod tests {
         let output = apply_map(config, "foo123");
         assert_eq!(output, "bar");
     }
+
+    #[test]
+    fn regex_map_ignore_case_matches() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\d+:bar".to_string()],
+            regex_map: true,
+            ignore_case: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "FOO123");
+        assert_eq!(output, "bar");
+    }
+
+    #[test]
+    fn regex_map_preserve_case_with_ignore_case() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo:bar".to_string()],
+            regex_map: true,
+            ignore_case: true,
+            preserve_case: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "FoO");
+        assert_eq!(output, "BaR");
+    }
+
+    #[test]
+    fn regex_map_replacement_is_literal() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo(\\d+):bar$1".to_string()],
+            regex_map: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo123");
+        assert_eq!(output, "bar$1");
+    }
+
+    #[test]
+    fn regex_map_invalid_pattern_errors() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo(:bar".to_string()],
+            regex_map: true,
+            ..Default::default()
+        };
+        assert!(Options::from_config(&config).is_err());
+    }
 }
 
 fn rewrite_references(

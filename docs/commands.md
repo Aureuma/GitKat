@@ -63,7 +63,7 @@ gk github-emails --token YOUR_GITHUB_TOKEN
 
 ## gk verify-rewrite
 
-Compare GitKat rewrite output against `git-filter-repo` across real repositories.
+Compare GitKat rewrite output against `git-filter-repo`, with optional blob-only checks against BFG.
 
 ```sh
 gk verify-rewrite --ci --with-blob
@@ -73,5 +73,8 @@ Common options:
 
 - `--ci`: use the smaller CI-safe repo set
 - `--with-blob`: include a small blob rewrite check
+- `--with-regex`: include regex mapping verification
+- `--with-bfg`: compare blob-only rewrites against BFG
+- `--bfg-jar`: explicit path to the BFG jar (or set `BFG_JAR`)
 - `--workdir`: custom working directory for clones
 - `--keep-workdir`: do not remove the working directory

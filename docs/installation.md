@@ -5,6 +5,7 @@
 - Git
 - Rust toolchain (cargo) for building from source
 - `git-filter-repo` (optional, for `gk verify-rewrite`)
+- BFG Repo-Cleaner + Java (optional, for `gk verify-rewrite --with-bfg`)
 
 ## Package managers
 
@@ -57,3 +58,4 @@ If you install via pip or npm, the wrapper downloads the matching binary into `~
 
 - `GITKAT_RELEASE_BASE`: Override the GitHub Releases download base URL.
 - `GITKAT_CACHE_DIR`: Override the cache directory used by the pip wrapper.
+- `BFG_JAR`: Path to the BFG jar when running `gk verify-rewrite --with-bfg`.

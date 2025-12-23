@@ -1,13 +1,13 @@
 # 𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸
 
-[![Checks](https://github.com/Aureuma/GitKat/actions/workflows/checks.yml/badge.svg)](https://github.com/Aureuma/GitKat/actions/workflows/checks.yml)
+[![Tests](https://github.com/Aureuma/GitKat/actions/workflows/tests.yml/badge.svg)](https://github.com/Aureuma/GitKat/actions/workflows/tests.yml)
 [![GitHub](https://img.shields.io/badge/GitHub-Aureuma/GitKat-181717?logo=github&logoColor=white)](https://github.com/Aureuma/GitKat)
 [![crates.io](https://img.shields.io/crates/v/gitkat.svg?logo=rust)](https://crates.io/crates/gitkat)
 [![Homebrew](https://img.shields.io/badge/Homebrew-Aureuma%2Fgitkat-FBB040?logo=homebrew&logoColor=black)](https://github.com/Aureuma/GitKat/blob/main/Formula/gitkat.rb)
 [![npm](https://img.shields.io/npm/v/@aureuma/gitkat?logo=npm)](https://www.npmjs.com/package/@aureuma/gitkat)
 [![PyPI](https://img.shields.io/pypi/v/gitkat?logo=pypi&logoColor=white)](https://pypi.org/project/gitkat/)
 
-𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ (GitKat) is a Rust toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, that mirrors the legacy shell scripts while adding a packaged, testable workflow.
+𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ GitKat is a Rust toolkit for managing Git repositories in bulk. It ships a single CLI, `gk`, for a packaged, testable workflow.
 
 ## Install
 
@@ -52,7 +52,7 @@ gk github-emails --token YOUR_GITHUB_TOKEN
 - `gk push`: force-push the current branch of each repo in the current directory.
 - `gk rewrite`: rewrite identity metadata and/or blob contents using a Rust gitoxide (gix) rewriter.
 - `gk github-emails --token <token>`: find contribution emails across GitHub repos you can access.
-- `gk verify-rewrite`: compare rewrite output against `git-filter-repo` across real repositories.
+- `gk verify-rewrite`: compare rewrite output against `git-filter-repo`, with optional blob-only checks against BFG.
 
 ## Rewrite notes
 
@@ -92,7 +92,7 @@ gk verify-rewrite --ci --with-blob
 mdbook build
 ```
 
-`gk verify-rewrite` compares against `git-filter-repo`, so install it if you want equivalence checks.
+`gk verify-rewrite` compares against `git-filter-repo`; add `--with-bfg` and set `BFG_JAR` to compare blob rewrites against BFG.
 
 ## License
 
