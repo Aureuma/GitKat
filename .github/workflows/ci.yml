@@ -15,6 +15,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Tests
         run: cargo test --workspace
+      - name: Build docs
+        run: |
+          cargo install mdbook
+          mdbook build
 
   rewrite-verify:
     runs-on: ubuntu-latest
