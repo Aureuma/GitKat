@@ -2,6 +2,15 @@
 
 The rewrite command uses a Rust helper built on gitoxide (gix) and preserves the behavior of the legacy `rewrite.sh` script.
 
+## Scope
+
+`gk rewrite` can:
+
+- Rewrite author/committer identity metadata.
+- Replace content inside text blobs (case-aware mappings).
+- Rename file paths using the same mappings.
+- Delete files across all history using exact paths or globs.
+
 ## Identity rewrite
 
 ```sh
@@ -49,6 +58,22 @@ gk rewrite --delete-path "assets/**/*.png"
 ```
 
 Delete paths accept glob patterns and log each removed file in the same colored output style as other rewrites.
+
+## Logging
+
+Rewrite output is verbose by default:
+
+- File paths are printed in magenta.
+- Match text is printed in red and replacements in blue.
+- Deleted files log `path -> [deleted]`.
+
+## Verification
+
+To compare rewrite output against `git-filter-repo`:
+
+```sh
+gk verify-rewrite --ci --with-blob
+```
 
 ## Notes
 
