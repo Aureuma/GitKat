@@ -1,0 +1,51 @@
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.level-easy {
+  color: #0f5132;
+  background: #d1e7dd;
+  border-color: #a3cfbb;
+}
+
+.level-intermediate {
+  color: #664d03;
+  background: #fff3cd;
+  border-color: #ffe69c;
+}
+
+.level-advanced {
+  color: #842029;
+  background: #f8d7da;
+  border-color: #f1aeb5;
+}
+
+.cookbook-meta {
+  margin: 0.75rem 0 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cookbook-meta code {
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.35rem;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.cookbook-callout {
+  padding: 1rem 1.2rem;
+  border-left: 4px solid #4f46e5;
+  background: rgba(79, 70, 229, 0.08);
+  border-radius: 0.5rem;
+  margin: 1.25rem 0;
+}
