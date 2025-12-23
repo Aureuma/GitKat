@@ -406,7 +406,7 @@ fn run_rewrite(args: RewriteArgs, base_dir: Option<&Path>) -> Result<i32> {
     };
 
     if opts.old_emails.is_empty() && opts.blob_map.is_empty() && opts.delete_paths.is_empty() {
-        println!("Error: specify at least one identity rewrite (-o/-e) or blob data mapping (-m).");
+        println!("Error: specify at least one identity rewrite (-o/-e), blob data mapping (-m), or delete path (-d/--delete-path).");
         return Ok(1);
     }
 

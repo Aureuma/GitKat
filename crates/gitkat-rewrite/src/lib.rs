@@ -58,7 +58,7 @@ struct Options {
     old_emails: HashSet<String>,
     patterns: Vec<Pattern>,
     exclude: Option<GlobSet>,
-    delete_paths: HashSet<String>,
+    delete_set: Option<GlobSet>,
     preserve_case: bool,
     rename_files: bool,
 }
@@ -66,7 +66,8 @@ struct Options {
 impl Options {
     fn from_config(config: &RewriteConfig) -> Result<Self> {
         let patterns = parse_patterns(&config.blob_map, config.ignore_case)?;
-        let exclude = build_exclude_set(&config.exclude_patterns)?;
+        let exclude = build_glob_set(&config.exclude_patterns)?;
+        let delete_set = build_glob_set(&config.delete_paths)?;
         let old_emails = config
             .old_emails
             .iter()
@@ -79,12 +80,6 @@ impl Options {
             .map(str::trim)
             .filter(|name| !name.is_empty())
             .map(|name| name.to_lowercase());
-        let delete_paths = config
-            .delete_paths
-            .iter()
-            .map(|path| path.trim().to_string())
-            .filter(|path| !path.is_empty())
-            .collect::<HashSet<_>>();
         let new_name = config
             .new_name
             .as_deref()
@@ -104,7 +99,7 @@ impl Options {
             old_emails,
             patterns,
             exclude,
-            delete_paths,
+            delete_set,
             preserve_case: config.preserve_case,
             rename_files: config.rename_files,
         })
@@ -131,7 +126,7 @@ fn parse_patterns(entries: &[String], ignore_case: bool) -> Result<Vec<Pattern>>
     Ok(patterns)
 }
 
-fn build_exclude_set(patterns: &[String]) -> Result<Option<GlobSet>> {
+fn build_glob_set(patterns: &[String]) -> Result<Option<GlobSet>> {
     if patterns.is_empty() {
         return Ok(None);
     }
@@ -380,7 +375,7 @@ fn build_commit_bytes(
 }
 
 fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) -> Result<ObjectId> {
-    if options.patterns.is_empty() && !options.rename_files && options.delete_paths.is_empty() {
+    if options.patterns.is_empty() && !options.rename_files && options.delete_set.is_none() {
         return Ok(tree_id);
     }
 
@@ -391,10 +386,12 @@ fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) ->
 
     walk_tree(repo, &tree, &mut path, &mut |path_bytes, entry| {
         let mut path_str = String::from_utf8_lossy(path_bytes).to_string();
-        if options.delete_paths.contains(&path_str) {
-            editor.remove(BString::from(path_bytes))?;
-            changed = true;
-            return Ok(());
+        if let Some(delete_set) = &options.delete_set {
+            if delete_set.is_match(path_str.as_str()) {
+                editor.remove(BString::from(path_bytes))?;
+                changed = true;
+                return Ok(());
+            }
         }
         if let Some(exclude) = &options.exclude {
             if exclude.is_match(path_str.as_str()) {

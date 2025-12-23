@@ -45,6 +45,7 @@ gk rewrite -m oldname:newname --rename-files
 
 ```sh
 gk rewrite --delete-path "path/to/file.txt"
+gk rewrite --delete-path "assets/**/*.png"
 ```
 
 ## Notes

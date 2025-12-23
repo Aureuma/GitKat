@@ -28,6 +28,9 @@ struct Args {
     /// Exclude file globs from blob rewrites (repeatable).
     #[arg(long = "exclude")]
     exclude_patterns: Vec<String>,
+    /// Delete files matching these globs (repeatable).
+    #[arg(long = "delete-path")]
+    delete_paths: Vec<String>,
     /// Preserve casing in replacements.
     #[arg(long)]
     preserve_case: bool,
@@ -48,7 +51,7 @@ fn main() -> Result<()> {
         old_emails: args.old_emails,
         blob_map: args.blob_map,
         exclude_patterns: args.exclude_patterns,
-        delete_paths: Vec::new(),
+        delete_paths: args.delete_paths,
         preserve_case: args.preserve_case,
         ignore_case: args.ignore_case,
         rename_files: args.rename_files,

@@ -69,8 +69,9 @@ gk rewrite -m token:REDACTED -x "data/*.csv" -x "vendor/*"
 # Rename file paths using the same mappings
 gk rewrite -m oldname:newname --rename-files
 
-# Delete a file across history
+# Delete a file or glob across history
 gk rewrite --delete-path "path/to/file.txt"
+gk rewrite --delete-path "assets/**/*.png"
 ```
 
 ## Development
