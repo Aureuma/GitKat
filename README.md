@@ -104,6 +104,13 @@ cargo run -p gitkat -- --help
 
 All tests and verification run in GitHub Actions. Local test runs are intentionally avoided to keep CI parity.
 
+Testing strategy:
+
+- CI is the source of truth for tests and verification.
+- `Tests` runs linting, unit tests, doc builds, and verification.
+- Verification covers identity, blob, regex, and BFG (blob-only).
+- Concurrency is capped to respect public repo minutes.
+
 ## License
 
 MIT License. See `LICENSE`.

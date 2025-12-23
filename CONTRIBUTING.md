@@ -17,6 +17,14 @@ gh run watch --workflow tests.yml --exit-status
 
 All tests and verification run in GitHub Actions. Local test runs are intentionally avoided to keep CI parity.
 
+## Testing strategy (CI-only)
+
+- CI is the source of truth for tests and verification.
+- `Tests` workflow runs linting, unit tests, doc builds, and verification.
+- Verification runs in a matrix: identity, blob, regex, and BFG (blob-only).
+- Concurrency is capped in CI to respect public repo minutes.
+- Trigger tests and proceed; do not wait for completion during development.
+
 ## Verification tools
 
 `gk verify-rewrite` can compare against external tooling to validate parity:

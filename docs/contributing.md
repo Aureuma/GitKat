@@ -2,7 +2,13 @@
 
 Please see `CONTRIBUTING.md` for local setup, coding standards, and the pull request process.
 
-Tests and verification run in GitHub Actions to keep CI parity. Local test runs are intentionally avoided.
+## Testing strategy (CI-only)
+
+- CI is the source of truth for tests and verification.
+- `Tests` workflow runs linting, unit tests, doc builds, and verification.
+- Verification runs in a matrix: identity, blob, regex, and BFG (blob-only).
+- Concurrency is capped in CI to respect public repo minutes.
+- Trigger tests and proceed; do not wait for completion during development.
 
 Verification tools used by contributors:
 
