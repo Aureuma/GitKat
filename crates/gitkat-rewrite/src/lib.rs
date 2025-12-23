@@ -858,6 +858,37 @@ mod tests {
         let output = apply_map(config, "foo:bar");
         assert_eq!(output, "baz");
     }
+
+    #[test]
+    fn mapping_unescapes_backslash() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\\\bar:baz".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo\\bar");
+        assert_eq!(output, "baz");
+    }
+
+    #[test]
+    fn mapping_handles_multiline_literal() {
+        let config = RewriteConfig {
+            blob_map: vec!["Line1\nLine2:REDACTED".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "Line1\nLine2");
+        assert_eq!(output, "REDACTED");
+    }
+
+    #[test]
+    fn regex_map_handles_multiline() {
+        let config = RewriteConfig {
+            blob_map: vec!["(?s)Line1.*Line3:REDACTED".to_string()],
+            regex_map: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "Line1\nLine2\nLine3");
+        assert_eq!(output, "REDACTED");
+    }
 }
 
 fn rewrite_references(

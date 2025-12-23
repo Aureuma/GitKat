@@ -11,6 +11,8 @@ The rewrite command uses a Rust helper built on gitoxide (gix) and preserves the
 - Rename file paths using the same mappings.
 - Delete files across all history using exact paths or globs.
 
+It does not rewrite commit messages.
+
 ## Identity rewrite
 
 ```sh

@@ -1,5 +1,7 @@
 # Commands
 
+GitKat separates history rewriting from metadata discovery. Only `gk rewrite` modifies Git objects; the other commands read history or validate behavior.
+
 ## gk check
 
 Search commit history for a name across child repositories of the current directory.

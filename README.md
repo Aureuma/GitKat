@@ -54,6 +54,14 @@ gk github-emails --token YOUR_GITHUB_TOKEN
 - `gk github-emails --token <token>`: find contribution emails across GitHub repos you can access.
 - `gk verify-rewrite`: compare rewrite output against `git-filter-repo`, with optional blob-only checks against BFG.
 
+## Command responsibilities
+
+GitKat keeps history rewriting and metadata discovery separate:
+
+- `gk rewrite` is the only command that rewrites history. It updates author/committer metadata (identity) and rewrites blob contents or paths in the commit tree. Commit messages are preserved.
+- `gk check`, `gk report`, and `gk github-emails` only read history to help you find the right identities or repositories to target. They never rewrite objects.
+- `gk verify-rewrite` validates parity against other tools; it does not change your working repo.
+
 ## Rewrite notes
 
 `gk rewrite` preserves the existing behavior of `rewrite.sh`, including case-aware blob mapping and commit metadata rewrites. The rewrite engine is implemented directly in Rust using gitoxide (gix).
