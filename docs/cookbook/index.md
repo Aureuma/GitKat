@@ -11,3 +11,7 @@ Each recipe includes a difficulty badge:
 - Easy: straightforward audit or single-action rewrite
 - Intermediate: multi-step rewrite or larger repo
 - Advanced: regex, multiline matching, or verification workflows
+
+## Full history requirement
+
+History rewrites require full clones. Shallow clones may fail because rewritten commits need parent history.

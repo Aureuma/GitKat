@@ -19,6 +19,7 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   GIT_TERMINAL_PROMPT: "0"
+  GIT_LFS_SKIP_SMUDGE: "1"
 
 jobs:
   cookbook:

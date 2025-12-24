@@ -18,7 +18,7 @@ Delete build output directories like dist/ and build/ across every commit.
 mkdir -p ~/scratch/gitkat-cookbook
 cd ~/scratch/gitkat-cookbook
 
-git clone --depth 200 https://github.com/tailwindlabs/tailwindcss.git
+git clone https://github.com/tailwindlabs/tailwindcss.git
 cd tailwindcss
 
 # Optional: see how many build artifacts are tracked
@@ -35,5 +35,5 @@ gk rewrite \
 
 ## Notes
 
-- For a full rewrite, clone without --depth so all commits are included.
+- History rewrites require a full clone. Shallow clones can fail to rewrite parents.
 - Use multiple delete paths to keep the intent explicit.

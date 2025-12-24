@@ -18,7 +18,7 @@ Rename a config template file and update references everywhere.
 mkdir -p ~/scratch/gitkat-cookbook
 cd ~/scratch/gitkat-cookbook
 
-git clone --depth 200 https://github.com/denoland/deno.git
+git clone https://github.com/denoland/deno.git
 cd deno
 
 # Rename a template file name (adjust to match your repo)

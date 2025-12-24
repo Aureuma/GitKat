@@ -475,14 +475,18 @@ fn restore_remotes(repo: &Path, remotes: &[RemoteConfig]) -> Result<()> {
 
 fn list_child_repos(base_dir: &Path) -> Result<Vec<PathBuf>> {
     let mut repos = Vec::new();
+    if base_dir.join(".git").exists() {
+        repos.push(base_dir.to_path_buf());
+    }
     for entry in fs::read_dir(base_dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.is_dir() && path.join(".git").is_dir() {
+        if path.is_dir() && path.join(".git").exists() {
             repos.push(path);
         }
     }
     repos.sort();
+    repos.dedup();
     Ok(repos)
 }
 

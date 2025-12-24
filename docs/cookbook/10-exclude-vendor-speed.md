@@ -18,7 +18,7 @@ Rewrite a string while skipping large dependency trees.
 mkdir -p ~/scratch/gitkat-cookbook
 cd ~/scratch/gitkat-cookbook
 
-git clone --depth 200 https://github.com/nodejs/node.git
+git clone https://github.com/nodejs/node.git
 cd node
 
 # Replace a legacy URL while skipping heavy folders
@@ -33,4 +33,4 @@ gk rewrite \
 ## Notes
 
 - Excludes are glob patterns that skip matching paths entirely.
-- Remove --depth for a full rewrite of the entire commit graph.
+- History rewrites require a full clone. Shallow clones can fail to rewrite parents.

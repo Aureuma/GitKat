@@ -18,7 +18,7 @@ Delete .DS_Store and .idea files from history.
 mkdir -p ~/scratch/gitkat-cookbook
 cd ~/scratch/gitkat-cookbook
 
-git clone --depth 200 https://github.com/facebook/react.git
+git clone https://github.com/facebook/react.git
 cd react
 
 # Remove common editor metadata files

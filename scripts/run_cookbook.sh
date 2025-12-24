@@ -28,17 +28,12 @@ mkdir -p "$WORK_DIR"
 clone_repo() {
   local url="$1"
   local dest="$2"
-  local depth="${3:-}"
 
   if [[ -d "$dest/.git" ]]; then
     return 0
   fi
 
-  if [[ -n "$depth" ]]; then
-    git clone --depth "$depth" "$url" "$dest"
-  else
-    git clone "$url" "$dest"
-  fi
+  git clone "$url" "$dest"
 }
 
 recipe_01() {
@@ -107,7 +102,7 @@ recipe_06() {
 
 recipe_07() {
   local repo="$WORK_DIR/07-tailwindcss"
-  clone_repo "https://github.com/tailwindlabs/tailwindcss.git" "$repo" "200"
+  clone_repo "https://github.com/tailwindlabs/tailwindcss.git" "$repo"
   (
     cd "$repo"
     git ls-files | grep -E '/(dist|build)/' | head -n 20 || true
@@ -146,7 +141,7 @@ recipe_09() {
 
 recipe_10() {
   local repo="$WORK_DIR/10-node"
-  clone_repo "https://github.com/nodejs/node.git" "$repo" "200"
+  clone_repo "https://github.com/nodejs/node.git" "$repo"
   (
     cd "$repo"
     "$GK_BIN" rewrite \
@@ -191,7 +186,7 @@ recipe_13() {
 
 recipe_14() {
   local repo="$WORK_DIR/14-terraform"
-  clone_repo "https://github.com/hashicorp/terraform.git" "$repo" "200"
+  clone_repo "https://github.com/hashicorp/terraform.git" "$repo"
   (
     cd "$repo"
     "$GK_BIN" rewrite -m "corp.internal:example.com" --ignore-case
@@ -210,7 +205,7 @@ recipe_15() {
 
 recipe_16() {
   local repo="$WORK_DIR/16-react"
-  clone_repo "https://github.com/facebook/react.git" "$repo" "200"
+  clone_repo "https://github.com/facebook/react.git" "$repo"
   (
     cd "$repo"
     "$GK_BIN" rewrite \
@@ -231,7 +226,7 @@ recipe_17() {
 
 recipe_18() {
   local repo="$WORK_DIR/18-deno"
-  clone_repo "https://github.com/denoland/deno.git" "$repo" "200"
+  clone_repo "https://github.com/denoland/deno.git" "$repo"
   (
     cd "$repo"
     "$GK_BIN" rewrite --rename-files -m "example.env:sample.env" --ignore-case

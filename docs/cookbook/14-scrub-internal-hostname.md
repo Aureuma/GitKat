@@ -18,7 +18,7 @@ Rewrite an internal hostname into a public one across history.
 mkdir -p ~/scratch/gitkat-cookbook
 cd ~/scratch/gitkat-cookbook
 
-git clone --depth 200 https://github.com/hashicorp/terraform.git
+git clone https://github.com/hashicorp/terraform.git
 cd terraform
 
 # Replace internal hostnames across text
@@ -29,4 +29,4 @@ gk rewrite -m "corp.internal:example.com" --ignore-case
 ## Notes
 
 - Add more mappings if multiple internal domains exist.
-- For full coverage, re-clone without --depth.
+- History rewrites require a full clone. Shallow clones can fail to rewrite parents.

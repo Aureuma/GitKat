@@ -23,6 +23,10 @@
 - Query GitHub contribution emails via API.
 - Delete paths (including globs) across history with colored rewrite logs.
 
+<div class="cookbook-callout">
+  <strong>Cookbook:</strong> <a href="cookbook/index.md">Hands-on recipes</a> with real repos, level badges, and verified commands.
+</div>
+
 ## Quick start
 
 ```sh
