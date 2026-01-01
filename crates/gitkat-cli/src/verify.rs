@@ -426,7 +426,11 @@ fn verify_repo(
     clone_repo(url, &source, workdir)?;
 
     let (_old_author_name, old_email, old_name) = pick_identity(&source)?;
-    let blob_map = if with_blob { pick_blob_map(&source)? } else { Vec::new() };
+    let blob_map = if with_blob {
+        pick_blob_map(&source)?
+    } else {
+        Vec::new()
+    };
     let base_options = VerifyOptions {
         new_name: "GitKat Rewrite".to_string(),
         new_email: "rewrite@example.test".to_string(),
@@ -599,7 +603,11 @@ fn run_bfg(repo: &Path, blob_map: &[String], bfg_jar: &Path) -> Result<()> {
 }
 
 fn clone_repo(url: &str, dest: &Path, workdir: &Path) -> Result<()> {
-    crate::run_git(["clone", "--quiet", url, dest.to_str().unwrap_or("")], workdir, true)?;
+    crate::run_git(
+        ["clone", "--quiet", url, dest.to_str().unwrap_or("")],
+        workdir,
+        true,
+    )?;
     Ok(())
 }
 
@@ -641,7 +649,10 @@ fn fast_export_hash(repo: &Path) -> Result<String> {
         .stdout(Stdio::piped())
         .spawn()
         .context("Failed to spawn git fast-export")?;
-    let mut stdout = child.stdout.take().ok_or_else(|| anyhow!("Missing git fast-export stdout"))?;
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| anyhow!("Missing git fast-export stdout"))?;
     let mut hasher = Sha256::new();
     let mut buffer = vec![0u8; 1024 * 1024];
     loop {
@@ -718,7 +729,10 @@ fn verify_blob_replacements(repo: &Path, blob_map: &[String], label: &str) -> Re
     }
 
     let mut found_old = vec![false; rules.len()];
-    let mut found_new = rules.iter().map(|(_, new)| new.is_empty()).collect::<Vec<_>>();
+    let mut found_new = rules
+        .iter()
+        .map(|(_, new)| new.is_empty())
+        .collect::<Vec<_>>();
 
     let mut child = Command::new("git")
         .arg("cat-file")
@@ -730,14 +744,20 @@ fn verify_blob_replacements(repo: &Path, blob_map: &[String], label: &str) -> Re
         .context("Failed to spawn git cat-file")?;
 
     {
-        let mut stdin = child.stdin.take().ok_or_else(|| anyhow!("Missing cat-file stdin"))?;
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| anyhow!("Missing cat-file stdin"))?;
         for id in &blob_ids {
             stdin.write_all(id.as_bytes())?;
             stdin.write_all(b"\n")?;
         }
     }
 
-    let mut stdout = child.stdout.take().ok_or_else(|| anyhow!("Missing cat-file stdout"))?;
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| anyhow!("Missing cat-file stdout"))?;
     for _ in 0..blob_ids.len() {
         let mut header = Vec::new();
         let mut byte = [0u8; 1];
@@ -792,9 +812,7 @@ fn verify_blob_replacements(repo: &Path, blob_map: &[String], label: &str) -> Re
             ));
         }
         if !found_new[idx] {
-            return Err(anyhow!(
-                "New blob token missing after {label} rewrite"
-            ));
+            return Err(anyhow!("New blob token missing after {label} rewrite"));
         }
     }
 

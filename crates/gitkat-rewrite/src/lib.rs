@@ -5,10 +5,10 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use anyhow::{anyhow, Context, Result};
+use gix::actor::SignatureRef;
 use gix::bstr::{BStr, BString};
 use gix::hash::ObjectId;
 use gix::object::tree::EntryKind;
-use gix::actor::SignatureRef;
 use gix::Reference;
 use gix_object::{CommitRef, Kind as ObjectKind, Tree as TreeObject, Write};
 use globset::{Glob, GlobSet, GlobSetBuilder};
@@ -205,7 +205,8 @@ fn build_glob_set(patterns: &[String]) -> Result<Option<GlobSet>> {
 
 pub fn rewrite_repo(repo_path: &Path, config: &RewriteConfig) -> Result<RewriteStats> {
     let options = Options::from_config(config)?;
-    let repo = gix::open(repo_path).with_context(|| format!("Open repo at {}", repo_path.display()))?;
+    let repo =
+        gix::open(repo_path).with_context(|| format!("Open repo at {}", repo_path.display()))?;
     let tips = collect_tips(&repo)?;
     if tips.is_empty() {
         return Err(anyhow!("No references found to rewrite"));
@@ -217,7 +218,14 @@ pub fn rewrite_repo(repo_path: &Path, config: &RewriteConfig) -> Result<RewriteS
     let mut cache = RewriteCache::default();
     let commit_ids = collect_commits(&repo, tips)?;
     for commit_id in commit_ids {
-        let new_id = rewrite_commit(&repo, commit_id, &options, &commit_map, &commit_hex, &mut cache)?;
+        let new_id = rewrite_commit(
+            &repo,
+            commit_id,
+            &options,
+            &commit_map,
+            &commit_hex,
+            &mut cache,
+        )?;
         commit_map.insert(commit_id, new_id);
         commit_hex.push((commit_id.to_string(), new_id.to_string()));
     }
@@ -252,7 +260,10 @@ fn collect_commits(repo: &gix::Repository, tips: Vec<ObjectId>) -> Result<Vec<Ob
     if tips.is_empty() {
         return Ok(Vec::new());
     }
-    let workdir = repo.workdir().map(PathBuf::from).unwrap_or_else(|| repo.path().to_path_buf());
+    let workdir = repo
+        .workdir()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| repo.path().to_path_buf());
     let mut child = Command::new("git")
         .arg("-C")
         .arg(workdir)
@@ -273,7 +284,9 @@ fn collect_commits(repo: &gix::Repository, tips: Vec<ObjectId>) -> Result<Vec<Ob
             IoWrite::write_all(&mut stdin, format!("{tip}\n").as_bytes())?;
         }
     }
-    let output = child.wait_with_output().context("Failed to run git rev-list")?;
+    let output = child
+        .wait_with_output()
+        .context("Failed to run git rev-list")?;
     if !output.status.success() {
         return Err(anyhow!("git rev-list failed"));
     }
@@ -301,13 +314,15 @@ fn rewrite_commit(
     }
     let commit_ref = CommitRef::from_bytes(&object.data)?;
 
-    let author_sig = SignatureRef::from_bytes::<gix_object::decode::ParseError>(commit_ref.author.as_ref())
-        .map_err(|err| anyhow!("Invalid author signature: {err:?}"))?;
+    let author_sig =
+        SignatureRef::from_bytes::<gix_object::decode::ParseError>(commit_ref.author.as_ref())
+            .map_err(|err| anyhow!("Invalid author signature: {err:?}"))?;
     let committer_sig =
         SignatureRef::from_bytes::<gix_object::decode::ParseError>(commit_ref.committer.as_ref())
             .map_err(|err| anyhow!("Invalid committer signature: {err:?}"))?;
 
-    let (author_line, _author_changed) = rewrite_signature_line(commit_ref.author, author_sig, options)?;
+    let (author_line, _author_changed) =
+        rewrite_signature_line(commit_ref.author, author_sig, options)?;
     let (committer_line, _committer_changed) =
         rewrite_signature_line(commit_ref.committer, committer_sig, options)?;
 
@@ -349,37 +364,38 @@ fn rewrite_commit_ids(
     if commit_map.is_empty() {
         return message;
     }
-    let replaced = commit_id_regex().replace_all(message.as_ref(), |caps: &regex::bytes::Captures| {
-        let bytes = caps.get(0).expect("capture").as_bytes();
-        if bytes.len() == 40 {
-            let Ok(old_id) = ObjectId::from_hex(bytes) else {
+    let replaced =
+        commit_id_regex().replace_all(message.as_ref(), |caps: &regex::bytes::Captures| {
+            let bytes = caps.get(0).expect("capture").as_bytes();
+            if bytes.len() == 40 {
+                let Ok(old_id) = ObjectId::from_hex(bytes) else {
+                    return Cow::Owned(bytes.to_vec());
+                };
+                return if let Some(new_id) = commit_map.get(&old_id) {
+                    Cow::Owned(new_id.to_string().into_bytes())
+                } else {
+                    Cow::Owned(bytes.to_vec())
+                };
+            }
+
+            let Ok(needle) = std::str::from_utf8(bytes) else {
                 return Cow::Owned(bytes.to_vec());
             };
-            return if let Some(new_id) = commit_map.get(&old_id) {
-                Cow::Owned(new_id.to_string().into_bytes())
+            let mut replacement: Option<&str> = None;
+            for (old_hex, new_hex) in commit_hex {
+                if old_hex.starts_with(needle) {
+                    if replacement.is_some() {
+                        return Cow::Owned(bytes.to_vec());
+                    }
+                    replacement = Some(new_hex);
+                }
+            }
+            if let Some(new_hex) = replacement {
+                Cow::Owned(new_hex[..needle.len()].as_bytes().to_vec())
             } else {
                 Cow::Owned(bytes.to_vec())
-            };
-        }
-
-        let Ok(needle) = std::str::from_utf8(bytes) else {
-            return Cow::Owned(bytes.to_vec());
-        };
-        let mut replacement: Option<&str> = None;
-        for (old_hex, new_hex) in commit_hex {
-            if old_hex.starts_with(needle) {
-                if replacement.is_some() {
-                    return Cow::Owned(bytes.to_vec());
-                }
-                replacement = Some(new_hex);
             }
-        }
-        if let Some(new_hex) = replacement {
-            Cow::Owned(new_hex[..needle.len()].as_bytes().to_vec())
-        } else {
-            Cow::Owned(bytes.to_vec())
-        }
-    });
+        });
     BString::from(replaced.into_owned())
 }
 
@@ -504,7 +520,11 @@ fn rewrite_tree(
                     if new_path != path_bytes {
                         editor.remove(BString::from(path_bytes))?;
                     }
-                    editor.upsert(BString::from(new_path), EntryKind::from(entry.mode()), cached_id)?;
+                    editor.upsert(
+                        BString::from(new_path),
+                        EntryKind::from(entry.mode()),
+                        cached_id,
+                    )?;
                     changed = true;
                 }
                 return Ok(());
@@ -514,7 +534,11 @@ fn rewrite_tree(
                 cache.blob_rewrites.insert(entry_id, entry_id);
                 if new_path != path_bytes {
                     editor.remove(BString::from(path_bytes))?;
-                    editor.upsert(BString::from(new_path), EntryKind::from(entry.mode()), entry_id)?;
+                    editor.upsert(
+                        BString::from(new_path),
+                        EntryKind::from(entry.mode()),
+                        entry_id,
+                    )?;
                     changed = true;
                 }
                 return Ok(());
@@ -532,7 +556,11 @@ fn rewrite_tree(
                 if new_path != path_bytes {
                     editor.remove(BString::from(path_bytes))?;
                 }
-                editor.upsert(BString::from(new_path), EntryKind::from(entry.mode()), new_blob_id)?;
+                editor.upsert(
+                    BString::from(new_path),
+                    EntryKind::from(entry.mode()),
+                    new_blob_id,
+                )?;
                 changed = true;
             }
         }
@@ -564,7 +592,8 @@ fn normalize_tree(repo: &gix::Repository, tree_id: ObjectId) -> Result<ObjectId>
         }
 
         let mode_value = entry.mode().value();
-        let normalized_mode = gix_object::tree::EntryMode::try_from(mode_value as u32).unwrap_or(entry.mode());
+        let normalized_mode =
+            gix_object::tree::EntryMode::try_from(mode_value as u32).unwrap_or(entry.mode());
         if normalized_mode != entry.mode() {
             changed = true;
         }
@@ -625,20 +654,29 @@ fn apply_patterns(input: &[u8], options: &Options) -> Option<Vec<u8>> {
             continue;
         }
         let mut matched = false;
-        let replaced = pattern.regex.replace_all(&data, |caps: &regex::bytes::Captures| {
-            matched = true;
-            if options.preserve_case {
-                Cow::Owned(preserve_case(caps.get(0).unwrap().as_bytes(), &pattern.replacement))
-            } else {
-                Cow::Borrowed(pattern.replacement.as_slice())
-            }
-        });
+        let replaced = pattern
+            .regex
+            .replace_all(&data, |caps: &regex::bytes::Captures| {
+                matched = true;
+                if options.preserve_case {
+                    Cow::Owned(preserve_case(
+                        caps.get(0).unwrap().as_bytes(),
+                        &pattern.replacement,
+                    ))
+                } else {
+                    Cow::Borrowed(pattern.replacement.as_slice())
+                }
+            });
         if matched {
             data = replaced.into_owned();
             changed = true;
         }
     }
-    if changed { Some(data) } else { None }
+    if changed {
+        Some(data)
+    } else {
+        None
+    }
 }
 
 fn apply_patterns_with_log(input: &[u8], path: &str, options: &Options) -> Option<Vec<u8>> {
@@ -676,7 +714,11 @@ fn apply_patterns_with_log(input: &[u8], path: &str, options: &Options) -> Optio
         }
     }
 
-    if changed { Some(data) } else { None }
+    if changed {
+        Some(data)
+    } else {
+        None
+    }
 }
 
 fn preserve_case(matched: &[u8], replacement: &[u8]) -> Vec<u8> {
@@ -690,7 +732,10 @@ fn preserve_case(matched: &[u8], replacement: &[u8]) -> Vec<u8> {
         return replacement.iter().map(|b| b.to_ascii_lowercase()).collect();
     }
     if is_title(matched) {
-        let mut out = replacement.iter().map(|b| b.to_ascii_lowercase()).collect::<Vec<_>>();
+        let mut out = replacement
+            .iter()
+            .map(|b| b.to_ascii_lowercase())
+            .collect::<Vec<_>>();
         if let Some(first) = out.get_mut(0) {
             *first = first.to_ascii_uppercase();
         }
@@ -723,7 +768,10 @@ fn log_rename(old_path: &str, new_path: &str) {
 
 fn log_delete(path: &str) {
     println!("{}{}{}", COLOR_PATH, path, COLOR_RESET);
-    println!("{}{}{} -> {}[deleted]{}", COLOR_PATH, path, COLOR_RESET, COLOR_REPL, COLOR_RESET);
+    println!(
+        "{}{}{} -> {}[deleted]{}",
+        COLOR_PATH, path, COLOR_RESET, COLOR_REPL, COLOR_RESET
+    );
 }
 
 fn log_replacement(path: &str, snapshot: &[u8], start: usize, end: usize, repl: &[u8]) {
@@ -748,7 +796,12 @@ fn log_replacement(path: &str, snapshot: &[u8], start: usize, end: usize, repl: 
     println!("{left_line} -> {right_line}");
 }
 
-fn extract_context(prefix: &str, suffix: &str, match_text: &str, repl_text: &str) -> (String, String) {
+fn extract_context(
+    prefix: &str,
+    suffix: &str,
+    match_text: &str,
+    repl_text: &str,
+) -> (String, String) {
     let pre_words: Vec<&str> = prefix.split_whitespace().collect();
     let post_words: Vec<&str> = suffix.split_whitespace().collect();
 
@@ -765,8 +818,16 @@ fn extract_context(prefix: &str, suffix: &str, match_text: &str, repl_text: &str
 
     let left = left_words.join(" ");
     let right = right_words.join(" ");
-    let left = if left.is_empty() { String::new() } else { format!("{left} ") };
-    let right = if right.is_empty() { String::new() } else { format!(" {right}") };
+    let left = if left.is_empty() {
+        String::new()
+    } else {
+        format!("{left} ")
+    };
+    let right = if right.is_empty() {
+        String::new()
+    } else {
+        format!(" {right}")
+    };
 
     let left_line = format!("{left}{COLOR_MATCH}{match_text}{COLOR_RESET}{right}");
     let right_line = format!("{left}{COLOR_REPL}{repl_text}{COLOR_RESET}{right}");
@@ -1004,7 +1065,13 @@ fn rewrite_tag(
         }
         _ => {}
     }
-    let tag_bytes = build_tag_bytes(target, target_kind, raw_tag.name, raw_tag.tagger, raw_tag.message);
+    let tag_bytes = build_tag_bytes(
+        target,
+        target_kind,
+        raw_tag.name,
+        raw_tag.tagger,
+        raw_tag.message,
+    );
     let new_id = repo
         .write_buf(ObjectKind::Tag, &tag_bytes)
         .map_err(|err| anyhow!(err))?;
@@ -1042,9 +1109,7 @@ fn parse_tag_object(data: &[u8]) -> Result<RawTag<'_>> {
         let value = iter.next().unwrap_or_default();
         match key {
             b"object" => target = Some(ObjectId::from_hex(value)?),
-            b"type" => {
-                target_kind = Some(ObjectKind::from_bytes(value)?)
-            }
+            b"type" => target_kind = Some(ObjectKind::from_bytes(value)?),
             b"tag" => name = Some(value),
             b"tagger" => tagger = Some(value),
             _ => {}
@@ -1094,7 +1159,11 @@ fn build_tag_bytes(
     out
 }
 
-fn update_reference(repo: &gix::Repository, reference: &mut Reference<'_>, new_target: ObjectId) -> Result<()> {
+fn update_reference(
+    repo: &gix::Repository,
+    reference: &mut Reference<'_>,
+    new_target: ObjectId,
+) -> Result<()> {
     if reference
         .set_target_id(new_target, "gitkat rewrite")
         .is_ok()
@@ -1116,7 +1185,10 @@ fn update_reference(repo: &gix::Repository, reference: &mut Reference<'_>, new_t
         .status()
         .with_context(|| format!("Update reference {} (git update-ref)", name))?;
     if !status.success() {
-        return Err(anyhow!("Update reference {} failed via git update-ref", name));
+        return Err(anyhow!(
+            "Update reference {} failed via git update-ref",
+            name
+        ));
     }
     Ok(())
 }

@@ -100,7 +100,9 @@ fn main() {
 }
 
 fn run_check(name: &str, base_dir: Option<&Path>) -> Result<i32> {
-    let base = base_dir.map(PathBuf::from).unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+    let base = base_dir
+        .map(PathBuf::from)
+        .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
     let repos = list_child_repos(&base)?;
     if repos.is_empty() {
         println!("No git repositories found in {}.", base.display());
@@ -116,7 +118,10 @@ fn run_check(name: &str, base_dir: Option<&Path>) -> Result<i32> {
         println!("== Checking repo: {} ==", repo_name);
         let output = git_output(["log", "--all", "--pretty=%an <%ae>%n%cn <%ce>"], &repo)?;
         if output.to_lowercase().contains(&needle) {
-            println!("Found commits with '{}' in author or committer fields.", name);
+            println!(
+                "Found commits with '{}' in author or committer fields.",
+                name
+            );
         } else {
             println!("Nothing.");
         }
@@ -126,7 +131,9 @@ fn run_check(name: &str, base_dir: Option<&Path>) -> Result<i32> {
 }
 
 fn run_report(base_dir: Option<&Path>) -> Result<i32> {
-    let base = base_dir.map(PathBuf::from).unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+    let base = base_dir
+        .map(PathBuf::from)
+        .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
     let mut repos = list_repos_recursive(&base)?;
     if repos.is_empty() {
         println!("No git repositories found under {}.", base.display());
@@ -157,14 +164,19 @@ fn run_report(base_dir: Option<&Path>) -> Result<i32> {
 }
 
 fn run_push(base_dir: Option<&Path>) -> Result<i32> {
-    let base = base_dir.map(PathBuf::from).unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+    let base = base_dir
+        .map(PathBuf::from)
+        .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
     let repos = list_child_repos(&base)?;
     if repos.is_empty() {
         println!("No git repositories found in {}.", base.display());
         return Ok(1);
     }
 
-    println!("== Force-pushing current branches of all repos in {} ==", base.display());
+    println!(
+        "== Force-pushing current branches of all repos in {} ==",
+        base.display()
+    );
     for repo in repos {
         let repo_name = repo
             .file_name()
@@ -219,7 +231,9 @@ fn run_rewrite(args: RewriteArgs, base_dir: Option<&Path>) -> Result<i32> {
         return Ok(1);
     }
 
-    let base = base_dir.map(PathBuf::from).unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+    let base = base_dir
+        .map(PathBuf::from)
+        .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
     let repos = resolve_repos(&base)?;
     if repos.is_empty() {
         println!("Error: no git repositories found under {}. Run from a parent directory containing repos or from inside a repo.", base.display());
@@ -266,10 +280,19 @@ fn run_github_emails(token: Option<String>) -> Result<i32> {
 
     println!("\nFetching organization repositories...");
     let org_repos = get_org_repos(&client)?;
-    println!("Found {} organization repositories where you have push access", org_repos.len());
+    println!(
+        "Found {} organization repositories where you have push access",
+        org_repos.len()
+    );
 
-    let all_repos = user_repos.into_iter().chain(org_repos.into_iter()).collect::<Vec<_>>();
-    println!("\nAnalyzing contributions across {} repositories...", all_repos.len());
+    let all_repos = user_repos
+        .into_iter()
+        .chain(org_repos.into_iter())
+        .collect::<Vec<_>>();
+    println!(
+        "\nAnalyzing contributions across {} repositories...",
+        all_repos.len()
+    );
 
     let mut all_emails = BTreeSet::new();
     let mut repo_emails: HashMap<String, BTreeSet<String>> = HashMap::new();
@@ -277,7 +300,13 @@ fn run_github_emails(token: Option<String>) -> Result<i32> {
     for (idx, repo) in all_repos.iter().enumerate() {
         let repo_owner = &repo.owner.login;
         let repo_name = &repo.name;
-        println!("[{}/{}] Checking {}/{}...", idx + 1, all_repos.len(), repo_owner, repo_name);
+        println!(
+            "[{}/{}] Checking {}/{}...",
+            idx + 1,
+            all_repos.len(),
+            repo_owner,
+            repo_name
+        );
         let emails = get_contribution_emails(&client, repo_owner, repo_name, &username)?;
         if !emails.is_empty() {
             repo_emails.insert(
@@ -420,18 +449,15 @@ fn capture_remotes(repo: &Path) -> Result<Vec<RemoteConfig>> {
 
     let mut remotes = Vec::new();
     for name in names {
-        let fetch_urls = git_output_or_empty(["config", "--get-all", &format!("remote.{name}.url")], repo)
-            .lines()
-            .map(str::trim)
-            .filter(|line| !line.is_empty())
-            .map(|line| line.to_string())
-            .collect::<Vec<_>>();
+        let fetch_urls =
+            git_output_or_empty(["config", "--get-all", &format!("remote.{name}.url")], repo)
+                .lines()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+                .map(|line| line.to_string())
+                .collect::<Vec<_>>();
         let push_urls = git_output_or_empty(
-            [
-                "config",
-                "--get-all",
-                &format!("remote.{name}.pushurl"),
-            ],
+            ["config", "--get-all", &format!("remote.{name}.pushurl")],
             repo,
         )
         .lines()
@@ -457,7 +483,11 @@ fn restore_remotes(repo: &Path, remotes: &[RemoteConfig]) -> Result<()> {
                 run_git(["remote", "set-url", &remote.name, first], repo, false)?;
             }
             for extra in remote.fetch_urls.iter().skip(1) {
-                run_git(["remote", "set-url", "--add", &remote.name, extra], repo, false)?;
+                run_git(
+                    ["remote", "set-url", "--add", &remote.name, extra],
+                    repo,
+                    false,
+                )?;
             }
         }
         if !remote.push_urls.is_empty() {
@@ -529,7 +559,10 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let args_vec: Vec<OsString> = args.into_iter().map(|arg| arg.as_ref().to_os_string()).collect();
+    let args_vec: Vec<OsString> = args
+        .into_iter()
+        .map(|arg| arg.as_ref().to_os_string())
+        .collect();
     let output = Command::new("git")
         .args(&args_vec)
         .current_dir(cwd)
@@ -552,7 +585,10 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let args_vec: Vec<OsString> = args.into_iter().map(|arg| arg.as_ref().to_os_string()).collect();
+    let args_vec: Vec<OsString> = args
+        .into_iter()
+        .map(|arg| arg.as_ref().to_os_string())
+        .collect();
     let status = Command::new("git")
         .args(&args_vec)
         .current_dir(cwd)
@@ -584,7 +620,9 @@ where
     S: AsRef<OsStr>,
 {
     match run_git(args, cwd, false) {
-        Ok(output) if output.status.success() => String::from_utf8_lossy(&output.stdout).to_string(),
+        Ok(output) if output.status.success() => {
+            String::from_utf8_lossy(&output.stdout).to_string()
+        }
         _ => String::new(),
     }
 }
@@ -677,7 +715,11 @@ fn get_user_repos(client: &reqwest::blocking::Client) -> Result<Vec<GithubRepo>>
     loop {
         let response = client
             .get("https://api.github.com/user/repos")
-            .query(&[("per_page", "100"), ("page", &page.to_string()), ("affiliation", "owner")])
+            .query(&[
+                ("per_page", "100"),
+                ("page", &page.to_string()),
+                ("affiliation", "owner"),
+            ])
             .send()?
             .error_for_status()?;
         let batch: Vec<GithubRepo> = response.json()?;
@@ -740,7 +782,11 @@ fn get_contribution_emails(
                 "https://api.github.com/repos/{}/{}/commits",
                 repo_owner, repo_name
             ))
-            .query(&[("author", username), ("per_page", "100"), ("page", &page.to_string())])
+            .query(&[
+                ("author", username),
+                ("per_page", "100"),
+                ("page", &page.to_string()),
+            ])
             .send()?;
         if !response.status().is_success() {
             break;
@@ -771,7 +817,11 @@ fn get_contribution_emails(
                 "https://api.github.com/repos/{}/{}/pulls",
                 repo_owner, repo_name
             ))
-            .query(&[("state", "all"), ("per_page", "100"), ("page", &page.to_string())])
+            .query(&[
+                ("state", "all"),
+                ("per_page", "100"),
+                ("page", &page.to_string()),
+            ])
             .send()?;
         if !response.status().is_success() {
             break;
