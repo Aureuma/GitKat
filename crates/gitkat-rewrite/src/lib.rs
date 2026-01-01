@@ -14,6 +14,9 @@ use gix_object::{CommitRef, Kind as ObjectKind, Tree as TreeObject, Write};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use regex::bytes::{Regex, RegexBuilder};
 
+mod transfer;
+pub use transfer::{gix_export, gix_import};
+
 const CTX_WORDS: usize = 2;
 const COLOR_PATH: &str = "\x1b[95m";
 const COLOR_MATCH: &str = "\x1b[31m";

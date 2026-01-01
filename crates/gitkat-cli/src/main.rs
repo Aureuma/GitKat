@@ -2,12 +2,13 @@ use std::collections::{BTreeSet, HashMap};
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fs;
+use std::io::{self, BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgAction, Args, Parser, Subcommand};
-use gitkat_rewrite::{rewrite_repo, RewriteConfig};
+use gitkat_rewrite::{gix_export, gix_import, rewrite_repo, RewriteConfig};
 use serde::Deserialize;
 use walkdir::WalkDir;
 
@@ -27,6 +28,8 @@ enum Commands {
     Report { path: Option<PathBuf> },
     Push,
     Rewrite(RewriteArgs),
+    FastExport(FastExportArgs),
+    FastImport(FastImportArgs),
     GithubEmails { token: Option<String> },
     VerifyRewrite(VerifyArgs),
 }
@@ -59,6 +62,22 @@ struct RewriteArgs {
     quiet: bool,
 }
 
+#[derive(Args)]
+struct FastExportArgs {
+    #[arg(long)]
+    repo: Option<PathBuf>,
+    #[arg(long)]
+    output: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct FastImportArgs {
+    #[arg(long)]
+    repo: PathBuf,
+    #[arg(long)]
+    input: Option<PathBuf>,
+}
+
 #[derive(Clone, Debug)]
 struct RewriteOptions {
     new_name: String,
@@ -89,6 +108,8 @@ fn main() {
         Commands::Report { path } => run_report(path.as_deref()),
         Commands::Push => run_push(None),
         Commands::Rewrite(args) => run_rewrite(args, None),
+        Commands::FastExport(args) => run_fast_export(args),
+        Commands::FastImport(args) => run_fast_import(args),
         Commands::GithubEmails { token } => run_github_emails(token),
         Commands::VerifyRewrite(args) => run_verify(args),
     };
@@ -261,6 +282,30 @@ fn run_rewrite(args: RewriteArgs, base_dir: Option<&Path>) -> Result<i32> {
     println!("✅ Rewrite complete (identity metadata + blob data).");
     println!("Verify logs, then push rewritten histories with:");
     println!("  git push --force --tags origin main");
+    Ok(0)
+}
+
+fn run_fast_export(args: FastExportArgs) -> Result<i32> {
+    let repo = args
+        .repo
+        .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+    let mut writer: Box<dyn io::Write> = if let Some(path) = args.output {
+        Box::new(BufWriter::new(fs::File::create(path)?))
+    } else {
+        Box::new(BufWriter::new(io::stdout()))
+    };
+    gix_export(&repo, &mut writer)?;
+    writer.flush()?;
+    Ok(0)
+}
+
+fn run_fast_import(args: FastImportArgs) -> Result<i32> {
+    let mut reader: Box<dyn io::Read> = if let Some(path) = args.input {
+        Box::new(BufReader::new(fs::File::open(path)?))
+    } else {
+        Box::new(BufReader::new(io::stdin()))
+    };
+    gix_import(&args.repo, &mut reader)?;
     Ok(0)
 }
 
