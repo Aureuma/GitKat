@@ -22,3 +22,6 @@ gix = { version = "0.76", features = ["revision", "tree-editor"] }
 gix-object = "0.53"
 globset = "0.4"
 regex = "1.10"
+
+[dev-dependencies]
+tempfile = "3.10"

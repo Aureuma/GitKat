@@ -503,6 +503,7 @@ dependencies = [
  "gix-object",
  "globset",
  "regex",
+ "tempfile",
 ]
 
 [[package]]
