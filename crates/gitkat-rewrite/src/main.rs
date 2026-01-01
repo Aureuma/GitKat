@@ -43,6 +43,9 @@ struct Args {
     /// Apply mappings to file paths.
     #[arg(long)]
     rename_files: bool,
+    /// Suppress per-match logging.
+    #[arg(long, short = 'q')]
+    quiet: bool,
 }
 
 fn main() -> Result<()> {
@@ -59,6 +62,7 @@ fn main() -> Result<()> {
         preserve_case: args.preserve_case,
         ignore_case: args.ignore_case,
         rename_files: args.rename_files,
+        quiet: args.quiet,
     };
     rewrite_repo(&args.repo, &config).map(|_| ())
 }

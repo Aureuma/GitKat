@@ -477,6 +477,7 @@ fn run_gitkat(repo: &Path, options: &VerifyOptions) -> Result<()> {
         preserve_case: options.preserve_case,
         ignore_case: options.ignore_case,
         rename_files: options.rename_files,
+        quiet: true,
     };
     rewrite_repo(repo, &config)?;
     crate::restore_remotes(repo, &remotes)?;

@@ -38,6 +38,7 @@ pub struct RewriteConfig {
     pub preserve_case: bool,
     pub ignore_case: bool,
     pub rename_files: bool,
+    pub quiet: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -91,11 +92,13 @@ struct Options {
     delete_set: Option<GlobSet>,
     preserve_case: bool,
     rename_files: bool,
+    log_changes: bool,
 }
 
 #[derive(Default)]
 struct RewriteCache {
     blob_rewrites: HashMap<ObjectId, ObjectId>,
+    tree_rewrites: HashMap<ObjectId, ObjectId>,
 }
 
 impl Options {
@@ -137,6 +140,7 @@ impl Options {
             delete_set,
             preserve_case: config.preserve_case,
             rename_files: config.rename_files,
+            log_changes: !config.quiet,
         })
     }
 }
@@ -479,6 +483,9 @@ fn rewrite_tree(
     if options.patterns.is_empty() && !options.rename_files && options.delete_set.is_none() {
         return Ok(tree_id);
     }
+    if let Some(cached) = cache.tree_rewrites.get(&tree_id).copied() {
+        return Ok(cached);
+    }
 
     let tree = repo.find_tree(tree_id)?;
     let mut editor = tree.edit()?;
@@ -489,7 +496,9 @@ fn rewrite_tree(
         let mut path_str = String::from_utf8_lossy(path_bytes).to_string();
         if let Some(delete_set) = &options.delete_set {
             if delete_set.is_match(path_str.as_str()) {
-                log_delete(&path_str);
+                if options.log_changes {
+                    log_delete(&path_str);
+                }
                 editor.remove(BString::from(path_bytes))?;
                 changed = true;
                 return Ok(());
@@ -506,7 +515,9 @@ fn rewrite_tree(
             if let Some(updated) = apply_patterns(&new_path, options) {
                 if updated != new_path {
                     let new_path_str = String::from_utf8_lossy(&updated).to_string();
-                    log_rename(&path_str, &new_path_str);
+                    if options.log_changes {
+                        log_rename(&path_str, &new_path_str);
+                    }
                     new_path = updated;
                     path_str = new_path_str;
                 }
@@ -567,12 +578,14 @@ fn rewrite_tree(
         Ok(())
     })?;
 
-    if changed {
+    let result = if changed {
         let new_tree = editor.write()?.detach();
-        normalize_tree(repo, new_tree)
+        normalize_tree(repo, new_tree)?
     } else {
-        Ok(tree_id)
-    }
+        tree_id
+    };
+    cache.tree_rewrites.insert(tree_id, result);
+    Ok(result)
 }
 
 fn normalize_tree(repo: &gix::Repository, tree_id: ObjectId) -> Result<ObjectId> {
@@ -682,6 +695,9 @@ fn apply_patterns(input: &[u8], options: &Options) -> Option<Vec<u8>> {
 fn apply_patterns_with_log(input: &[u8], path: &str, options: &Options) -> Option<Vec<u8>> {
     if options.patterns.is_empty() {
         return None;
+    }
+    if !options.log_changes {
+        return apply_patterns(input, options);
     }
     let mut data = input.to_vec();
     let mut changed = false;

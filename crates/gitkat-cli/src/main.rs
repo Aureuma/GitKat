@@ -55,6 +55,8 @@ struct RewriteArgs {
     preserve_case: bool,
     #[arg(long, short = 'i')]
     ignore_case: bool,
+    #[arg(long, short = 'q', action = ArgAction::SetTrue, alias = "no-log")]
+    quiet: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -70,6 +72,7 @@ struct RewriteOptions {
     preserve_case: bool,
     ignore_case: bool,
     rename_files: bool,
+    quiet: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -214,6 +217,7 @@ fn run_rewrite(args: RewriteArgs, base_dir: Option<&Path>) -> Result<i32> {
         preserve_case: args.preserve_case,
         ignore_case: args.ignore_case,
         rename_files: args.rename_files,
+        quiet: args.quiet,
     };
 
     if opts.old_emails.is_empty() && opts.blob_map.is_empty() && opts.delete_paths.is_empty() {
@@ -355,6 +359,7 @@ fn run_gix_rewrite(repo: &Path, options: &RewriteOptions) -> Result<()> {
         preserve_case: options.preserve_case,
         ignore_case: options.ignore_case,
         rename_files: options.rename_files,
+        quiet: options.quiet,
     };
     rewrite_repo(repo, &config)?;
     Ok(())
