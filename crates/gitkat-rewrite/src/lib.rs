@@ -398,7 +398,7 @@ fn rewrite_commit_ids(
                 }
             }
             if let Some(new_hex) = replacement {
-                Cow::Owned(new_hex[..needle.len()].as_bytes().to_vec())
+                Cow::Owned(new_hex.as_bytes()[..needle.len()].to_vec())
             } else {
                 Cow::Owned(bytes.to_vec())
             }
@@ -891,126 +891,6 @@ fn is_binary(data: &[u8]) -> bool {
     data.contains(&0)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn apply_map(config: RewriteConfig, input: &str) -> String {
-        let options = Options::from_config(&config).expect("options");
-        let bytes = input.as_bytes();
-        let out = apply_patterns(bytes, &options).unwrap_or_else(|| bytes.to_vec());
-        String::from_utf8(out).expect("utf8 output")
-    }
-
-    #[test]
-    fn literal_map_escapes_regex_syntax() {
-        let config = RewriteConfig {
-            blob_map: vec!["foo\\d+:bar".to_string()],
-            ..Default::default()
-        };
-        let output = apply_map(config, "foo123");
-        assert_eq!(output, "foo123");
-    }
-
-    #[test]
-    fn regex_map_honors_patterns() {
-        let config = RewriteConfig {
-            blob_map: vec!["foo\\d+:bar".to_string()],
-            regex_map: true,
-            ..Default::default()
-        };
-        let output = apply_map(config, "foo123");
-        assert_eq!(output, "bar");
-    }
-
-    #[test]
-    fn regex_map_ignore_case_matches() {
-        let config = RewriteConfig {
-            blob_map: vec!["foo\\d+:bar".to_string()],
-            regex_map: true,
-            ignore_case: true,
-            ..Default::default()
-        };
-        let output = apply_map(config, "FOO123");
-        assert_eq!(output, "bar");
-    }
-
-    #[test]
-    fn regex_map_preserve_case_with_ignore_case() {
-        let config = RewriteConfig {
-            blob_map: vec!["foo:bar".to_string()],
-            regex_map: true,
-            ignore_case: true,
-            preserve_case: true,
-            ..Default::default()
-        };
-        let output = apply_map(config, "FoO");
-        assert_eq!(output, "BaR");
-    }
-
-    #[test]
-    fn regex_map_replacement_is_literal() {
-        let config = RewriteConfig {
-            blob_map: vec!["foo(\\d+):bar$1".to_string()],
-            regex_map: true,
-            ..Default::default()
-        };
-        let output = apply_map(config, "foo123");
-        assert_eq!(output, "bar$1");
-    }
-
-    #[test]
-    fn regex_map_invalid_pattern_errors() {
-        let config = RewriteConfig {
-            blob_map: vec!["foo(:bar".to_string()],
-            regex_map: true,
-            ..Default::default()
-        };
-        assert!(Options::from_config(&config).is_err());
-    }
-
-    #[test]
-    fn mapping_allows_literal_colon() {
-        let config = RewriteConfig {
-            blob_map: vec!["foo\\:bar:baz".to_string()],
-            ..Default::default()
-        };
-        let output = apply_map(config, "foo:bar");
-        assert_eq!(output, "baz");
-    }
-
-    #[test]
-    fn mapping_unescapes_backslash() {
-        let config = RewriteConfig {
-            blob_map: vec!["foo\\\\bar:baz".to_string()],
-            ..Default::default()
-        };
-        let output = apply_map(config, "foo\\bar");
-        assert_eq!(output, "baz");
-    }
-
-    #[test]
-    fn mapping_handles_multiline_literal() {
-        let config = RewriteConfig {
-            blob_map: vec!["Line1\nLine2:REDACTED".to_string()],
-            ..Default::default()
-        };
-        let output = apply_map(config, "Line1\nLine2");
-        assert_eq!(output, "REDACTED");
-    }
-
-    #[test]
-    fn regex_map_handles_multiline() {
-        let config = RewriteConfig {
-            blob_map: vec!["(?s)Line1.*Line3:REDACTED".to_string()],
-            regex_map: true,
-            ..Default::default()
-        };
-        let output = apply_map(config, "Line1\nLine2\nLine3");
-        assert_eq!(output, "REDACTED");
-    }
-}
-
 fn rewrite_references(
     repo: &gix::Repository,
     commit_map: &HashMap<ObjectId, ObjectId>,
@@ -1210,4 +1090,124 @@ fn update_reference(
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn apply_map(config: RewriteConfig, input: &str) -> String {
+        let options = Options::from_config(&config).expect("options");
+        let bytes = input.as_bytes();
+        let out = apply_patterns(bytes, &options).unwrap_or_else(|| bytes.to_vec());
+        String::from_utf8(out).expect("utf8 output")
+    }
+
+    #[test]
+    fn literal_map_escapes_regex_syntax() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\d+:bar".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo123");
+        assert_eq!(output, "foo123");
+    }
+
+    #[test]
+    fn regex_map_honors_patterns() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\d+:bar".to_string()],
+            regex_map: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo123");
+        assert_eq!(output, "bar");
+    }
+
+    #[test]
+    fn regex_map_ignore_case_matches() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\d+:bar".to_string()],
+            regex_map: true,
+            ignore_case: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "FOO123");
+        assert_eq!(output, "bar");
+    }
+
+    #[test]
+    fn regex_map_preserve_case_with_ignore_case() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo:bar".to_string()],
+            regex_map: true,
+            ignore_case: true,
+            preserve_case: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "FoO");
+        assert_eq!(output, "BaR");
+    }
+
+    #[test]
+    fn regex_map_replacement_is_literal() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo(\\d+):bar$1".to_string()],
+            regex_map: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo123");
+        assert_eq!(output, "bar$1");
+    }
+
+    #[test]
+    fn regex_map_invalid_pattern_errors() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo(:bar".to_string()],
+            regex_map: true,
+            ..Default::default()
+        };
+        assert!(Options::from_config(&config).is_err());
+    }
+
+    #[test]
+    fn mapping_allows_literal_colon() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\:bar:baz".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo:bar");
+        assert_eq!(output, "baz");
+    }
+
+    #[test]
+    fn mapping_unescapes_backslash() {
+        let config = RewriteConfig {
+            blob_map: vec!["foo\\\\bar:baz".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "foo\\bar");
+        assert_eq!(output, "baz");
+    }
+
+    #[test]
+    fn mapping_handles_multiline_literal() {
+        let config = RewriteConfig {
+            blob_map: vec!["Line1\nLine2:REDACTED".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "Line1\nLine2");
+        assert_eq!(output, "REDACTED");
+    }
+
+    #[test]
+    fn regex_map_handles_multiline() {
+        let config = RewriteConfig {
+            blob_map: vec!["(?s)Line1.*Line3:REDACTED".to_string()],
+            regex_map: true,
+            ..Default::default()
+        };
+        let output = apply_map(config, "Line1\nLine2\nLine3");
+        assert_eq!(output, "REDACTED");
+    }
 }

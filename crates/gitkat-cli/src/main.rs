@@ -336,7 +336,7 @@ fn run_github_emails(token: Option<String>) -> Result<i32> {
 
     let all_repos = user_repos
         .into_iter()
-        .chain(org_repos.into_iter())
+        .chain(org_repos)
         .collect::<Vec<_>>();
     println!(
         "\nAnalyzing contributions across {} repositories...",

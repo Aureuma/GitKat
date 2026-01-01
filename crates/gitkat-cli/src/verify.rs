@@ -491,7 +491,7 @@ fn run_filter_repo(repo: &Path, options: &VerifyOptions) -> Result<()> {
     envs.insert("GITKIT_OLD_NAME".to_string(), options.old_name.clone());
     envs.insert(
         "GITKIT_OLD_EMAILS".to_string(),
-        serialize_lines(&[options.old_email.clone()]),
+        serialize_lines(std::slice::from_ref(&options.old_email)),
     );
     envs.insert(
         "GITKIT_BLOB_MAP".to_string(),
