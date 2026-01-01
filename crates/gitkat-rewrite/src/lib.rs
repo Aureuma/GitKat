@@ -1,8 +1,9 @@
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
-use std::io::Write as IoWrite;
+use std::io::{self, IsTerminal, Write as IoWrite};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Context, Result};
 use gix::actor::SignatureRef;
@@ -18,6 +19,89 @@ mod transfer;
 pub use transfer::{gix_export, gix_import};
 
 const CTX_WORDS: usize = 2;
+const PROGRESS_INTERVAL: Duration = Duration::from_millis(200);
+
+struct Progress {
+    total: usize,
+    done: usize,
+    last_emit: Instant,
+    last_len: usize,
+    enabled: bool,
+}
+
+impl Progress {
+    fn new(total: usize, enabled: bool) -> Self {
+        Self {
+            total,
+            done: 0,
+            last_emit: Instant::now() - PROGRESS_INTERVAL,
+            last_len: 0,
+            enabled,
+        }
+    }
+
+    fn start(&mut self) {
+        if self.total == 0 {
+            return;
+        }
+        self.render(true);
+    }
+
+    fn tick(&mut self) {
+        if self.total == 0 {
+            return;
+        }
+        self.done = self.done.saturating_add(1);
+        self.render(false);
+    }
+
+    fn finish(&mut self) {
+        if self.total == 0 {
+            return;
+        }
+        if self.done > self.total {
+            self.done = self.total;
+        }
+        self.render(true);
+        if self.enabled {
+            let mut stderr = io::stderr();
+            let _ = IoWrite::write_all(&mut stderr, b"\n");
+            let _ = IoWrite::flush(&mut stderr);
+        }
+    }
+
+    fn render(&mut self, force: bool) {
+        if !self.enabled {
+            return;
+        }
+        let now = Instant::now();
+        if !force
+            && now.duration_since(self.last_emit) < PROGRESS_INTERVAL
+            && self.done < self.total
+        {
+            return;
+        }
+        let percent = if self.total == 0 {
+            100
+        } else {
+            (self.done * 100) / self.total
+        };
+        let line = format!(
+            "Rewriting commits: {}/{} ({}%)",
+            self.done, self.total, percent
+        );
+        let mut stderr = io::stderr();
+        let _ = IoWrite::write_all(&mut stderr, b"\r");
+        let _ = IoWrite::write_all(&mut stderr, line.as_bytes());
+        if self.last_len > line.len() {
+            let padding = vec![b' '; self.last_len - line.len()];
+            let _ = IoWrite::write_all(&mut stderr, &padding);
+        }
+        let _ = IoWrite::flush(&mut stderr);
+        self.last_len = line.len();
+        self.last_emit = now;
+    }
+}
 const COLOR_PATH: &str = "\x1b[95m";
 const COLOR_MATCH: &str = "\x1b[31m";
 const COLOR_REPL: &str = "\x1b[34m";
@@ -224,6 +308,11 @@ pub fn rewrite_repo(repo_path: &Path, config: &RewriteConfig) -> Result<RewriteS
     let mut tag_map = HashMap::<ObjectId, ObjectId>::new();
     let mut cache = RewriteCache::default();
     let commit_ids = collect_commits(&repo, tips)?;
+    let mut progress = Progress::new(
+        commit_ids.len(),
+        !config.quiet && io::stderr().is_terminal(),
+    );
+    progress.start();
     for commit_id in commit_ids {
         rewrite_commit_graph(
             &repo,
@@ -232,8 +321,10 @@ pub fn rewrite_repo(repo_path: &Path, config: &RewriteConfig) -> Result<RewriteS
             &mut commit_map,
             &mut commit_hex,
             &mut cache,
+            &mut progress,
         )?;
     }
+    progress.finish();
 
     rewrite_references(&repo, &commit_map, &mut tag_map)?;
     delete_remote_refs(&repo)?;
@@ -326,6 +417,7 @@ fn rewrite_commit_graph(
     commit_map: &mut HashMap<ObjectId, ObjectId>,
     commit_hex: &mut Vec<(String, String)>,
     cache: &mut RewriteCache,
+    progress: &mut Progress,
 ) -> Result<ObjectId> {
     if let Some(existing) = commit_map.get(&commit_id) {
         return Ok(*existing);
@@ -344,6 +436,7 @@ fn rewrite_commit_graph(
             let new_id = rewrite_commit(repo, current_id, options, commit_map, commit_hex, cache)?;
             commit_map.insert(current_id, new_id);
             commit_hex.push((current_id.to_string(), new_id.to_string()));
+            progress.tick();
             continue;
         }
 
