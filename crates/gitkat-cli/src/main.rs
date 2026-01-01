@@ -127,7 +127,12 @@ fn run_check(name: &str, base_dir: Option<&Path>) -> Result<i32> {
     let base = base_dir
         .map(PathBuf::from)
         .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
-    let repos = list_child_repos(&base)?;
+    let mut repos = list_child_repos(&base)?;
+    if repos.is_empty() {
+        if let Some(root) = find_git_root(&base) {
+            repos.push(root);
+        }
+    }
     if repos.is_empty() {
         println!("No git repositories found in {}.", base.display());
         return Ok(1);

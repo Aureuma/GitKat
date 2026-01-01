@@ -225,16 +225,14 @@ pub fn rewrite_repo(repo_path: &Path, config: &RewriteConfig) -> Result<RewriteS
     let mut cache = RewriteCache::default();
     let commit_ids = collect_commits(&repo, tips)?;
     for commit_id in commit_ids {
-        let new_id = rewrite_commit(
+        rewrite_commit_graph(
             &repo,
             commit_id,
             &options,
-            &commit_map,
-            &commit_hex,
+            &mut commit_map,
+            &mut commit_hex,
             &mut cache,
         )?;
-        commit_map.insert(commit_id, new_id);
-        commit_hex.push((commit_id.to_string(), new_id.to_string()));
     }
 
     rewrite_references(&repo, &commit_map, &mut tag_map)?;
@@ -305,6 +303,67 @@ fn collect_commits(repo: &gix::Repository, tips: Vec<ObjectId>) -> Result<Vec<Ob
         commits.push(id);
     }
     Ok(commits)
+}
+
+fn collect_commit_parents(repo: &gix::Repository, commit_id: ObjectId) -> Result<Vec<ObjectId>> {
+    let object = repo.find_object(commit_id)?;
+    if object.kind != ObjectKind::Commit {
+        return Err(anyhow!("Expected commit object, got {:?}", object.kind));
+    }
+    let commit_ref = CommitRef::from_bytes(&object.data)?;
+    let mut parents = Vec::with_capacity(commit_ref.parents.len());
+    for parent_hex in &commit_ref.parents {
+        let parent_id = ObjectId::from_hex(parent_hex.as_ref())?;
+        parents.push(parent_id);
+    }
+    Ok(parents)
+}
+
+fn rewrite_commit_graph(
+    repo: &gix::Repository,
+    commit_id: ObjectId,
+    options: &Options,
+    commit_map: &mut HashMap<ObjectId, ObjectId>,
+    commit_hex: &mut Vec<(String, String)>,
+    cache: &mut RewriteCache,
+) -> Result<ObjectId> {
+    if let Some(existing) = commit_map.get(&commit_id) {
+        return Ok(*existing);
+    }
+
+    let mut stack = Vec::new();
+    let mut visiting = HashSet::new();
+    stack.push((commit_id, false));
+
+    while let Some((current_id, expanded)) = stack.pop() {
+        if commit_map.contains_key(&current_id) {
+            continue;
+        }
+        if expanded {
+            visiting.remove(&current_id);
+            let new_id = rewrite_commit(repo, current_id, options, commit_map, commit_hex, cache)?;
+            commit_map.insert(current_id, new_id);
+            commit_hex.push((current_id.to_string(), new_id.to_string()));
+            continue;
+        }
+
+        if !visiting.insert(current_id) {
+            continue;
+        }
+        stack.push((current_id, true));
+        let parents = collect_commit_parents(repo, current_id)?;
+        for parent_id in parents.into_iter().rev() {
+            if commit_map.contains_key(&parent_id) || visiting.contains(&parent_id) {
+                continue;
+            }
+            stack.push((parent_id, false));
+        }
+    }
+
+    commit_map
+        .get(&commit_id)
+        .copied()
+        .ok_or_else(|| anyhow!("Missing rewritten commit for {commit_id}"))
 }
 
 fn rewrite_commit(

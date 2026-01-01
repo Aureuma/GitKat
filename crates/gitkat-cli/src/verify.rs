@@ -573,7 +573,8 @@ fn build_bfg_replace_text(entries: &[String]) -> Result<String> {
     let mut lines = Vec::new();
     for entry in entries {
         let (old, new) = gitkat_rewrite::parse_mapping(entry)?;
-        lines.push(format!("{old}==>{new}"));
+        let escaped = regex::escape(&old);
+        lines.push(format!("{escaped}==>{new}"));
     }
     Ok(lines.join("\n"))
 }
