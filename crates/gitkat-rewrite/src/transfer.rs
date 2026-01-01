@@ -49,7 +49,7 @@ pub fn gix_export(repo_path: &std::path::Path, mut out: impl Write) -> Result<()
 }
 
 pub fn gix_import(repo_path: &std::path::Path, input: impl Read) -> Result<()> {
-    let repo = match gix::open(repo_path) {
+    let mut repo = match gix::open(repo_path) {
         Ok(repo) => repo,
         Err(_) => gix::init(repo_path)
             .with_context(|| format!("Initialize repo at {}", repo_path.display()))?,
@@ -103,6 +103,7 @@ pub fn gix_import(repo_path: &std::path::Path, input: impl Read) -> Result<()> {
         }
     }
 
+    repo.committer_or_set_generic_fallback()?;
     for export_ref in refs {
         repo.reference(
             export_ref.name.as_str(),
