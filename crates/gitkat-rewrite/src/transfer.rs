@@ -1,11 +1,15 @@
 use std::collections::HashSet;
 use std::io::{BufRead, BufReader, Read, Write};
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 
 use anyhow::{anyhow, Context, Result};
 use gix::bstr::BString;
 use gix::hash::ObjectId;
 use gix::refs::transaction::PreviousValue;
-use gix_object::{CommitRef, Kind as ObjectKind, TagRef, Write as ObjectWrite};
+use gix_object::{
+    tree::EntryKind, CommitRef, Kind as ObjectKind, TagRef, TreeRefIter, Write as ObjectWrite,
+};
 
 const EXPORT_HEADER: &str = "gix-fast-export-1";
 const END_REFS: &str = "end-refs";
@@ -21,10 +25,11 @@ struct ExportRef {
 pub fn gix_export(repo_path: &std::path::Path, mut out: impl Write) -> Result<()> {
     let repo =
         gix::open(repo_path).with_context(|| format!("Open repo at {}", repo_path.display()))?;
+    let workdir = repo_workdir(&repo);
     let mut refs = collect_refs(&repo)?;
     refs.sort_by(|a, b| a.name.cmp(&b.name));
 
-    let objects = collect_objects(&repo, &refs)?;
+    let objects = collect_objects(&repo, &workdir, &refs)?;
 
     writeln!(out, "{EXPORT_HEADER}")?;
     for export_ref in &refs {
@@ -33,10 +38,10 @@ pub fn gix_export(repo_path: &std::path::Path, mut out: impl Write) -> Result<()
     writeln!(out, "{END_REFS}")?;
 
     for oid in objects {
-        let object = repo.find_object(oid)?;
-        let kind = object_kind_label(object.kind)?;
-        writeln!(out, "object {} {} {}", oid, kind, object.data.len())?;
-        out.write_all(&object.data)?;
+        let (kind, data) = load_object(&repo, &workdir, oid)?;
+        let kind = object_kind_label(kind)?;
+        writeln!(out, "object {} {} {}", oid, kind, data.len())?;
+        out.write_all(&data)?;
         out.write_all(b"\n")?;
     }
     writeln!(out, "{END_OBJECTS}")?;
@@ -128,7 +133,11 @@ fn collect_refs(repo: &gix::Repository) -> Result<Vec<ExportRef>> {
     Ok(refs)
 }
 
-fn collect_objects(repo: &gix::Repository, refs: &[ExportRef]) -> Result<Vec<ObjectId>> {
+fn collect_objects(
+    repo: &gix::Repository,
+    workdir: &Path,
+    refs: &[ExportRef],
+) -> Result<Vec<ObjectId>> {
     let mut seen = HashSet::new();
     let mut stack = Vec::new();
     for export_ref in refs {
@@ -139,10 +148,10 @@ fn collect_objects(repo: &gix::Repository, refs: &[ExportRef]) -> Result<Vec<Obj
         if !seen.insert(oid) {
             continue;
         }
-        let object = repo.find_object(oid)?;
-        match object.kind {
+        let (kind, data) = load_object(repo, workdir, oid)?;
+        match kind {
             ObjectKind::Commit => {
-                let commit = CommitRef::from_bytes(&object.data)?;
+                let commit = CommitRef::from_bytes(&data)?;
                 let tree_id = ObjectId::from_hex(commit.tree.as_ref())?;
                 stack.push(tree_id);
                 for parent_hex in commit.parents {
@@ -151,14 +160,17 @@ fn collect_objects(repo: &gix::Repository, refs: &[ExportRef]) -> Result<Vec<Obj
                 }
             }
             ObjectKind::Tree => {
-                let tree = repo.find_tree(oid)?;
-                for entry in tree.iter() {
+                for entry in TreeRefIter::from_bytes(&data) {
                     let entry = entry?;
-                    stack.push(entry.oid().to_owned());
+                    if entry.mode.kind() == EntryKind::Commit {
+                        // Submodules point at commits not stored in this repo; fast-export skips them.
+                        continue;
+                    }
+                    stack.push(entry.oid.to_owned());
                 }
             }
             ObjectKind::Tag => {
-                let tag = TagRef::from_bytes(&object.data)?;
+                let tag = TagRef::from_bytes(&data)?;
                 let target_id = ObjectId::from_hex(tag.target.as_ref())?;
                 stack.push(target_id);
             }
@@ -169,6 +181,96 @@ fn collect_objects(repo: &gix::Repository, refs: &[ExportRef]) -> Result<Vec<Obj
     let mut objects: Vec<ObjectId> = seen.into_iter().collect();
     objects.sort_by(|a, b| a.as_bytes().cmp(b.as_bytes()));
     Ok(objects)
+}
+
+fn repo_workdir(repo: &gix::Repository) -> PathBuf {
+    repo.workdir()
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| repo.path().to_path_buf())
+}
+
+fn load_object(
+    repo: &gix::Repository,
+    workdir: &Path,
+    oid: ObjectId,
+) -> Result<(ObjectKind, Vec<u8>)> {
+    match repo.find_object(oid) {
+        Ok(object) => {
+            let detached = object.detach();
+            Ok((detached.kind, detached.data))
+        }
+        Err(err) => git_cat_file_object(workdir, oid).with_context(|| {
+            format!("git cat-file fallback failed for {oid} after gix error: {err}")
+        }),
+    }
+}
+
+fn git_cat_file_object(workdir: &Path, oid: ObjectId) -> Result<(ObjectKind, Vec<u8>)> {
+    let mut child = Command::new("git")
+        .arg("-C")
+        .arg(workdir)
+        .arg("cat-file")
+        .arg("--batch")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .with_context(|| format!("Spawn git cat-file in {}", workdir.display()))?;
+
+    {
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| anyhow!("Missing git cat-file stdin"))?;
+        writeln!(stdin, "{oid}")?;
+    }
+
+    let output = child
+        .wait_with_output()
+        .context("Read git cat-file output")?;
+    if !output.status.success() {
+        return Err(anyhow!(
+            "git cat-file failed in {}: {}",
+            workdir.display(),
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+
+    let newline = output
+        .stdout
+        .iter()
+        .position(|&byte| byte == b'\n')
+        .ok_or_else(|| anyhow!("git cat-file output missing header newline"))?;
+    let header = String::from_utf8_lossy(&output.stdout[..newline]);
+    let header = header.trim_end();
+    if header.ends_with(" missing") {
+        return Err(anyhow!("git cat-file reports {header}"));
+    }
+
+    let mut parts = header.splitn(3, ' ');
+    let header_oid = parts.next().unwrap_or_default();
+    let kind = parts.next().ok_or_else(|| anyhow!("Missing object kind"))?;
+    let size = parts.next().ok_or_else(|| anyhow!("Missing object size"))?;
+    if header_oid != oid.to_string() {
+        return Err(anyhow!(
+            "git cat-file returned {header_oid} while requesting {oid}"
+        ));
+    }
+    let size = size
+        .parse::<usize>()
+        .with_context(|| format!("Bad object size: {size}"))?;
+    let data_start = newline + 1;
+    let data_end = data_start + size;
+    if output.stdout.len() < data_end + 1 {
+        return Err(anyhow!("git cat-file output truncated for {oid}"));
+    }
+    let data = output.stdout[data_start..data_end].to_vec();
+    if output.stdout[data_end] != b'\n' {
+        return Err(anyhow!("Missing newline after git cat-file data"));
+    }
+    let kind = ObjectKind::from_bytes(kind.as_bytes())
+        .with_context(|| format!("Bad object kind: {kind}"))?;
+    Ok((kind, data))
 }
 
 fn object_kind_label(kind: ObjectKind) -> Result<&'static str> {
