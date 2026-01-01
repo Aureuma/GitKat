@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
+use std::io::Write as IoWrite;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use anyhow::{anyhow, Context, Result};
 use gix::bstr::{BStr, BString};
@@ -90,6 +91,11 @@ struct Options {
     delete_set: Option<GlobSet>,
     preserve_case: bool,
     rename_files: bool,
+}
+
+#[derive(Default)]
+struct RewriteCache {
+    blob_rewrites: HashMap<ObjectId, ObjectId>,
 }
 
 impl Options {
@@ -208,9 +214,10 @@ pub fn rewrite_repo(repo_path: &Path, config: &RewriteConfig) -> Result<RewriteS
     let mut commit_map = HashMap::<ObjectId, ObjectId>::new();
     let mut commit_hex = Vec::<(String, String)>::new();
     let mut tag_map = HashMap::<ObjectId, ObjectId>::new();
+    let mut cache = RewriteCache::default();
     let commit_ids = collect_commits(&repo, tips)?;
     for commit_id in commit_ids {
-        let new_id = rewrite_commit(&repo, commit_id, &options, &commit_map, &commit_hex)?;
+        let new_id = rewrite_commit(&repo, commit_id, &options, &commit_map, &commit_hex, &mut cache)?;
         commit_map.insert(commit_id, new_id);
         commit_hex.push((commit_id.to_string(), new_id.to_string()));
     }
@@ -241,17 +248,32 @@ fn collect_tips(repo: &gix::Repository) -> Result<Vec<ObjectId>> {
     Ok(tips)
 }
 
-fn collect_commits(repo: &gix::Repository, _tips: Vec<ObjectId>) -> Result<Vec<ObjectId>> {
+fn collect_commits(repo: &gix::Repository, tips: Vec<ObjectId>) -> Result<Vec<ObjectId>> {
+    if tips.is_empty() {
+        return Ok(Vec::new());
+    }
     let workdir = repo.workdir().map(PathBuf::from).unwrap_or_else(|| repo.path().to_path_buf());
-    let output = Command::new("git")
+    let mut child = Command::new("git")
         .arg("-C")
         .arg(workdir)
         .arg("rev-list")
         .arg("--reverse")
         .arg("--topo-order")
-        .arg("--all")
-        .output()
-        .context("Failed to run git rev-list")?;
+        .arg("--stdin")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .context("Failed to spawn git rev-list")?;
+    {
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| anyhow!("Failed to open git rev-list stdin"))?;
+        for tip in tips {
+            IoWrite::write_all(&mut stdin, format!("{tip}\n").as_bytes())?;
+        }
+    }
+    let output = child.wait_with_output().context("Failed to run git rev-list")?;
     if !output.status.success() {
         return Err(anyhow!("git rev-list failed"));
     }
@@ -271,6 +293,7 @@ fn rewrite_commit(
     options: &Options,
     commit_map: &HashMap<ObjectId, ObjectId>,
     commit_hex: &[(String, String)],
+    cache: &mut RewriteCache,
 ) -> Result<ObjectId> {
     let object = repo.find_object(commit_id)?;
     if object.kind != ObjectKind::Commit {
@@ -292,7 +315,7 @@ fn rewrite_commit(
     message = rewrite_commit_ids(message, commit_map, commit_hex);
 
     let tree_id = ObjectId::from_hex(commit_ref.tree.as_ref())?;
-    let new_tree = rewrite_tree(repo, tree_id, options)?;
+    let new_tree = rewrite_tree(repo, tree_id, options, cache)?;
 
     let mut parents = Vec::with_capacity(commit_ref.parents.len());
     for parent_hex in &commit_ref.parents {
@@ -431,7 +454,12 @@ fn build_commit_bytes(
     out
 }
 
-fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) -> Result<ObjectId> {
+fn rewrite_tree(
+    repo: &gix::Repository,
+    tree_id: ObjectId,
+    options: &Options,
+    cache: &mut RewriteCache,
+) -> Result<ObjectId> {
     if options.patterns.is_empty() && !options.rename_files && options.delete_set.is_none() {
         return Ok(tree_id);
     }
@@ -471,8 +499,19 @@ fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) ->
 
         if entry.mode().is_blob() {
             let entry_id = entry.oid().to_owned();
+            if let Some(cached_id) = cache.blob_rewrites.get(&entry_id).copied() {
+                if new_path != path_bytes || cached_id != entry_id {
+                    if new_path != path_bytes {
+                        editor.remove(BString::from(path_bytes))?;
+                    }
+                    editor.upsert(BString::from(new_path), EntryKind::from(entry.mode()), cached_id)?;
+                    changed = true;
+                }
+                return Ok(());
+            }
             let blob = repo.find_blob(entry_id)?;
             if is_binary(&blob.data) {
+                cache.blob_rewrites.insert(entry_id, entry_id);
                 if new_path != path_bytes {
                     editor.remove(BString::from(path_bytes))?;
                     editor.upsert(BString::from(new_path), EntryKind::from(entry.mode()), entry_id)?;
@@ -488,6 +527,7 @@ fn rewrite_tree(repo: &gix::Repository, tree_id: ObjectId, options: &Options) ->
                 }
             }
 
+            cache.blob_rewrites.insert(entry_id, new_blob_id);
             if new_path != path_bytes || new_blob_id != entry_id {
                 if new_path != path_bytes {
                     editor.remove(BString::from(path_bytes))?;
