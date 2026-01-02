@@ -29,6 +29,8 @@ const CI_REPOS: &[&str] = &[
     "https://github.com/github/gitignore.git",
 ];
 
+const CI_BFG_REPOS: &[&str] = &["https://github.com/octocat/Hello-World.git"];
+
 const COMMIT_CALLBACK: &str = r#"
 import os
 import re
@@ -250,6 +252,8 @@ pub(crate) fn run_verify(args: VerifyArgs) -> Result<i32> {
 
     let repos: Vec<String> = if !repos.is_empty() {
         repos
+    } else if ci && with_bfg {
+        CI_BFG_REPOS.iter().map(|repo| repo.to_string()).collect()
     } else if ci {
         CI_REPOS.iter().map(|repo| repo.to_string()).collect()
     } else {
@@ -288,6 +292,7 @@ pub(crate) fn run_verify(args: VerifyArgs) -> Result<i32> {
             with_regex,
             with_bfg,
             bfg_jar.as_deref(),
+            ci,
         )?;
         println!("OK: {}", url);
     }
@@ -372,6 +377,7 @@ fn verify_with_bfg(
     name: &str,
     options: &VerifyOptions,
     bfg_jar: &Path,
+    ci: bool,
 ) -> Result<()> {
     if options.blob_map.is_empty() {
         return Ok(());
@@ -400,7 +406,7 @@ fn verify_with_bfg(
         regex_map: false,
     };
     run_gitkat(&gix_repo, &blob_only)?;
-    run_bfg(&bfg_repo, &options.blob_map, bfg_jar)?;
+    run_bfg(&bfg_repo, &options.blob_map, bfg_jar, !ci)?;
 
     verify_blob_replacements(&gix_repo, &options.blob_map, "gitkat")?;
     verify_blob_replacements(&bfg_repo, &options.blob_map, "bfg")?;
@@ -415,6 +421,7 @@ fn verify_repo(
     with_regex: bool,
     with_bfg: bool,
     bfg_jar: Option<&Path>,
+    ci: bool,
 ) -> Result<()> {
     let name = url
         .rsplit('/')
@@ -457,7 +464,7 @@ fn verify_repo(
 
     if with_bfg {
         let bfg_jar = bfg_jar.ok_or_else(|| anyhow!("BFG jar path is required for --with-bfg"))?;
-        verify_with_bfg(&source, workdir, name, &base_options, bfg_jar)?;
+        verify_with_bfg(&source, workdir, name, &base_options, bfg_jar, ci)?;
     }
 
     Ok(())
@@ -579,7 +586,7 @@ fn build_bfg_replace_text(entries: &[String]) -> Result<String> {
     Ok(lines.join("\n"))
 }
 
-fn run_bfg(repo: &Path, blob_map: &[String], bfg_jar: &Path) -> Result<()> {
+fn run_bfg(repo: &Path, blob_map: &[String], bfg_jar: &Path, aggressive_gc: bool) -> Result<()> {
     let replacements = build_bfg_replace_text(blob_map)?;
     let temp_dir = TempDir::new()?;
     let replace_path = temp_dir.path().join("bfg-replacements.txt");
@@ -600,7 +607,11 @@ fn run_bfg(repo: &Path, blob_map: &[String], bfg_jar: &Path) -> Result<()> {
     }
 
     crate::run_git_status(["reflog", "expire", "--expire=now", "--all"], repo)?;
-    crate::run_git_status(["gc", "--prune=now", "--aggressive"], repo)?;
+    if aggressive_gc {
+        crate::run_git_status(["gc", "--prune=now", "--aggressive"], repo)?;
+    } else {
+        crate::run_git_status(["gc", "--prune=now"], repo)?;
+    }
     Ok(())
 }
 

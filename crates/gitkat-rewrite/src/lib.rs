@@ -186,6 +186,7 @@ struct Options {
 struct RewriteCache {
     blob_rewrites: HashMap<ObjectId, ObjectId>,
     tree_rewrites: HashMap<ObjectId, ObjectId>,
+    logged_deletes: HashSet<String>,
 }
 
 impl Options {
@@ -652,7 +653,9 @@ fn rewrite_tree(
         if let Some(delete_set) = &options.delete_set {
             if delete_set.is_match(path_str.as_str()) {
                 if options.log_changes {
-                    log_delete(&path_str);
+                    if cache.logged_deletes.insert(path_str.clone()) {
+                        log_delete(&path_str);
+                    }
                 }
                 editor.remove(BString::from(path_bytes))?;
                 changed = true;
@@ -680,6 +683,19 @@ fn rewrite_tree(
         }
 
         if entry.mode().is_blob() {
+            if options.patterns.is_empty() {
+                if new_path != path_bytes {
+                    let entry_id = entry.oid().to_owned();
+                    editor.remove(BString::from(path_bytes))?;
+                    editor.upsert(
+                        BString::from(new_path),
+                        EntryKind::from(entry.mode()),
+                        entry_id,
+                    )?;
+                    changed = true;
+                }
+                return Ok(());
+            }
             let entry_id = entry.oid().to_owned();
             if let Some(cached_id) = cache.blob_rewrites.get(&entry_id).copied() {
                 if new_path != path_bytes || cached_id != entry_id {
