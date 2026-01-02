@@ -12,52 +12,46 @@
 
 # 𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸
 
-𝔾𝚒𝚝𝕂𝚊𝚝 ⫷⫸ (GitKat) is a Rust CLI for bulk Git repository maintenance. It keeps the behavior of the original shell tooling while adding packaged, testable workflows.
+GitKat is a Rust CLI for bulk Git repository maintenance. It focuses on repeatable history rewrites and identity audits across many repos while keeping the workflow simple: inspect, map, rewrite, verify, and push.
 
 ## Highlights
 
-- Search commit metadata across many repos.
-- List author emails for auditing.
-- Force-push current branches in bulk.
-- Rewrite history with a Rust gitoxide (gix) rewriter, including case-preserving blob replacements.
-- Query GitHub contribution emails via API.
-- Delete paths (including globs) across history with colored rewrite logs.
+- Audit commit metadata across many repositories.
+- Inventory author emails to prepare identity rewrites.
+- Rewrite history with a Rust gitoxide (gix) engine.
+- Rename paths and delete files across all history.
+- Verify parity against `git-filter-repo` and optionally BFG.
 
 <div class="cookbook-callout">
-  <strong>Cookbook:</strong> <a href="cookbook/index.md">Hands-on recipes</a> with real repos, level badges, and verified commands.
+  <strong>Cookbook:</strong> <a href="cookbook/index.md">Hands-on recipes</a> with real repos, explicit goals, and copy/paste commands.
 </div>
 
 ## Quick start
 
 ```sh
+# Audit authors across repos
 gk check "Example Name"
 gk report .
-gk push
+
+# Rewrite content with case-preserving replacements
 gk rewrite -m olddomain.com:newdomain.com --ignore-case --preserve-case
+
+# Query GitHub contribution emails
 gk github-emails --token YOUR_GITHUB_TOKEN
 ```
 
-## Install
+## Typical workflow
 
-```sh
-# crates.io
-cargo install gitkat --locked
+1. **Audit identities** with `gk check` or `gk report`.
+2. **Plan mappings** (`-m old:new`) and any `--delete-path` rules.
+3. **Rewrite** from inside a repo or from a parent directory.
+4. **Verify** with `gk verify-rewrite` if you need tool parity checks.
+5. **Push** rewritten history with `git push --force --tags`.
 
-# Homebrew
-brew tap Aureuma/gitkat
-brew install gitkat
+## Where to go next
 
-# npm
-npm install -g @aureuma/gitkat
-
-# pipx (recommended)
-pipx install gitkat
-
-# pip
-python -m pip install gitkat
-```
-
-## Safety
-
-- Rewrites change history. Run from a clean working tree and review results before pushing.
-- After a rewrite, force-push branches and tags: `git push --force --tags origin main`.
+- [Installation](installation.md)
+- [Commands](commands.md)
+- [Rewrite guide](rewrite.md)
+- [Verification](verification.md)
+- [Cookbook](cookbook/index.md)

@@ -1,17 +1,23 @@
 # Cookbook
 
-Hands-on recipes for real-world history rewrites and audits. Each entry includes a story, a repo profile, and a step-by-step walkthrough with verified commands.
+Hands-on recipes for real-world history rewrites and audits. Each entry includes a scenario, a clear goal, and copy/paste commands.
 
-Use these as notebooks: clone a repo into a scratch directory, run the commands, and compare the output to your expectations before touching production history.
+## How to use these recipes
 
-## Levels
+1. Work in a scratch directory.
+2. Clone the repo and reproduce the scenario.
+3. Run `gk rewrite` and verify the result.
+4. Only then apply the approach to production history.
+
+## Difficulty levels
 
 Each recipe includes a difficulty badge:
 
-- Easy: straightforward audit or single-action rewrite
-- Intermediate: multi-step rewrite or larger repo
-- Advanced: regex, multiline matching, or verification workflows
+- **Easy:** single-action audits or rewrites.
+- **Intermediate:** multi-step rewrites or larger repos.
+- **Advanced:** regex, multiline matching, or verification workflows.
 
-## Full history requirement
+## Notes
 
-History rewrites require full clones. Shallow clones may fail because rewritten commits need parent history.
+- Use full clones. Shallow history can cause missing-parent errors in rewrites.
+- Rewrites are destructive. Coordinate with collaborators before pushing.

@@ -2,39 +2,32 @@
 
 <div class="cookbook-meta">
   <span class="level-badge level-easy">Easy</span>
-  <code>Repo: fastify/fastify</code>
-  <code>Size: medium</code>
+  <code>Repo: any</code>
+  <code>Size: any</code>
 </div>
 
-A contributor committed local environment files. You want to remove them entirely from history.
+Environment files often contain secrets and should be removed from history.
 
 ## Goal
 
-Delete .env files everywhere in the tree so they never existed in Git history.
+Delete `.env` files across all history.
 
 ## Steps
 
 ```sh
-mkdir -p ~/scratch/gitkat-cookbook
-cd ~/scratch/gitkat-cookbook
+# Delete specific .env files
+gk rewrite --delete-path ".env"
 
-git clone https://github.com/fastify/fastify.git
-cd fastify
+gk rewrite --delete-path "config/.env"
+```
 
-# Confirm whether any env files exist in tracked history
+For multiple .env variants:
 
-git ls-files | grep -E '\\.env($|\\.)' || true
-
-# Remove env files from all commits
-
-gk rewrite \
-  --delete-path ".env" \
-  --delete-path ".env.local" \
-  --delete-path "**/.env" \
-  --delete-path "**/.env.*"
+```sh
+gk rewrite --delete-path "**/.env" --delete-path "**/.env.*"
 ```
 
 ## Notes
 
-- The delete paths accept globs, so you can target nested files too.
-- If nothing matches, GitKat will report zero deletions but still complete.
+- Delete patterns use glob matching.
+- After removal, rotate any credentials that were exposed.

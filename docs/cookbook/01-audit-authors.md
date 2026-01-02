@@ -2,39 +2,27 @@
 
 <div class="cookbook-meta">
   <span class="level-badge level-easy">Easy</span>
-  <code>Repo: octocat/Hello-World</code>
-  <code>Size: small</code>
+  <code>Repo: any</code>
+  <code>Size: any</code>
 </div>
 
-You inherited a tiny demo repo and want to confirm who authored the commits before rewriting anything.
+You are about to rewrite history and need to know which names and emails appear in commits.
 
 ## Goal
 
-List authors and search for a specific name without touching history.
+Inventory author identities so you can build accurate rewrite mappings.
 
 ## Steps
 
 ```sh
-mkdir -p ~/scratch/gitkat-cookbook
-cd ~/scratch/gitkat-cookbook
-
-git clone https://github.com/octocat/Hello-World.git
-cd Hello-World
-
-# Review recent commits for context
-
-git log -n 20 --format="%an <%ae>"
-
-# Search for a name across author/committer fields
-
-gk check "octocat"
-
-# Inventory emails in this repo
-
+# From a directory containing multiple repos
 gk report .
+
+gk check "Jane Developer"
 ```
 
 ## Notes
 
-- `gk check` and `gk report` only read history.
-- Use these before choosing targets for `gk rewrite`.
+- `gk report` lists unique author emails per repo.
+- `gk check` searches both author and committer fields.
+- Use the results to decide which emails to include with `-o` in `gk rewrite`.

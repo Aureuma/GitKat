@@ -2,35 +2,29 @@
 
 <div class="cookbook-meta">
   <span class="level-badge level-easy">Easy</span>
-  <code>Repo: seaborn/seaborn</code>
-  <code>Size: medium</code>
+  <code>Repo: any</code>
+  <code>Size: large</code>
 </div>
 
-Data files were accidentally checked in. You want to remove CSV datasets across all commits.
+Large CSV datasets can bloat history and should be removed.
 
 ## Goal
 
-Delete CSV blobs from every revision.
+Delete CSV files across history.
 
 ## Steps
 
 ```sh
-mkdir -p ~/scratch/gitkat-cookbook
-cd ~/scratch/gitkat-cookbook
-
-git clone https://github.com/mwaskom/seaborn.git
-cd seaborn
-
-# Find any tracked CSV files
-
-git ls-files | grep -E '\\.csv$' | head -n 20 || true
-
-# Remove all CSV files from history
-
 gk rewrite --delete-path "**/*.csv"
+```
+
+To target a specific dataset directory:
+
+```sh
+gk rewrite --delete-path "data/archive/**"
 ```
 
 ## Notes
 
-- Use a narrower glob if you need to keep some datasets.
-- Combine with -x to exclude directories that should stay untouched.
+- Use more specific globs if you need to preserve certain CSVs.
+- Add patterns to `.gitignore` to prevent reintroduction.

@@ -2,31 +2,24 @@
 
 <div class="cookbook-meta">
   <span class="level-badge level-intermediate">Intermediate</span>
-  <code>Repo: hashicorp/terraform</code>
-  <code>Size: large</code>
+  <code>Repo: any</code>
+  <code>Size: medium</code>
 </div>
 
-Docs and configs contain an internal hostname that should never ship. Replace it everywhere.
+Docs or configs reference internal hostnames that should be removed.
 
 ## Goal
 
-Rewrite an internal hostname into a public one across history.
+Replace internal hostnames across text blobs.
 
 ## Steps
 
 ```sh
-mkdir -p ~/scratch/gitkat-cookbook
-cd ~/scratch/gitkat-cookbook
-
-git clone https://github.com/hashicorp/terraform.git
-cd terraform
-
-# Replace internal hostnames across text
-
-gk rewrite -m "corp.internal:example.com" --ignore-case
+# Replace a private hostname with a public placeholder
+gk rewrite -m "internal.company.local:example.invalid" --ignore-case
 ```
 
 ## Notes
 
-- Add more mappings if multiple internal domains exist.
-- History rewrites require a full clone. Shallow clones can fail to rewrite parents.
+- Use `--regex` if the hostname has variants you need to match.
+- Consider using `--preserve-case` if casing varies.

@@ -2,32 +2,25 @@
 
 <div class="cookbook-meta">
   <span class="level-badge level-advanced">Advanced</span>
-  <code>Repo: google/googletest</code>
+  <code>Repo: any</code>
   <code>Size: medium</code>
 </div>
 
-A template signature block was copied into many files, including a literal colon. Remove it everywhere.
+A multiline signature block appears in docs or config files and needs to be removed everywhere.
 
 ## Goal
 
-Use regex mapping to delete a multiline block that includes colons.
+Use a regex mapping that spans multiple lines.
 
 ## Steps
 
 ```sh
-mkdir -p ~/scratch/gitkat-cookbook
-cd ~/scratch/gitkat-cookbook
-
-git clone https://github.com/google/googletest.git
-cd googletest
-
-# Replace the multiline block with a redacted tag
-
-gk rewrite --regex \
-  -m $'By\\: Shayan Amani\\n\\nFeel free to PR\\. \\:heart_eyes\\::[redacted]'
+# Example: remove a multi-line signature block
+gk rewrite -m "(?s)BEGIN SIGNATURE.*?END SIGNATURE:REDACTED" --regex
 ```
 
 ## Notes
 
-- Escape literal colons in mappings with `\:` so they are not treated as separators.
-- Use $'..' to embed newlines and backslashes cleanly in shell.
+- Use `(?s)` to make `.` match newlines.
+- Replacement text is literal; capture groups are not expanded.
+- Test on a small sample repo before rewriting production history.

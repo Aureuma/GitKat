@@ -2,35 +2,24 @@
 
 <div class="cookbook-meta">
   <span class="level-badge level-intermediate">Intermediate</span>
-  <code>Repo: simple-icons/simple-icons</code>
+  <code>Repo: any</code>
   <code>Size: medium</code>
 </div>
 
-Design assets came in with mixed extensions. You want to standardize .jpeg to .jpg and update references.
+You want to normalize binary file extensions (for example, `.jpeg` to `.jpg`).
 
 ## Goal
 
-Rename files and update text references in one rewrite.
+Rename file paths across history without touching file contents.
 
 ## Steps
 
 ```sh
-mkdir -p ~/scratch/gitkat-cookbook
-cd ~/scratch/gitkat-cookbook
-
-git clone https://github.com/simple-icons/simple-icons.git
-cd simple-icons
-
-# See if any jpeg references exist
-
-git grep -n "\\.jpeg" | head -n 20 || true
-
-# Rename paths and update content
-
-gk rewrite --rename-files -m ".jpeg:.jpg" --ignore-case
+# Rename .jpeg to .jpg across history
+gk rewrite -m ".jpeg:.jpg" --rename-files
 ```
 
 ## Notes
 
-- `--rename-files` changes file paths and blob text at the same time.
-- Keep the mapping short so it only touches the extension.
+- This only changes paths, not blob contents.
+- If both `.jpeg` and `.jpg` exist in the same directory, you may get conflicts.

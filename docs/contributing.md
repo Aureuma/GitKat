@@ -1,16 +1,33 @@
 # Contributing
 
-Please see `CONTRIBUTING.md` for local setup, coding standards, and the pull request process.
+Thanks for helping improve GitKat. This doc summarizes contributor workflows; see `CONTRIBUTING.md` at the repository root for complete guidance.
 
-## Testing strategy (CI-only)
+## Quick setup
 
-- CI is the source of truth for tests and verification.
-- `Tests` workflow runs linting, unit tests, doc builds, and verification.
-- Verification runs in a matrix: identity, blob, regex, and BFG (blob-only).
-- Concurrency is capped in CI to respect public repo minutes.
-- Trigger tests and proceed; do not wait for completion during development.
+```sh
+cargo build -p gitkat
+cargo test --workspace --all-targets
+```
 
-Verification tools used by contributors:
+## Development workflow
+
+- Keep changes small and focused.
+- Prefer adding tests when changing rewrite logic or verification behavior.
+- Use `gk verify-rewrite` sparingly locally; CI is the source of truth.
+
+## CI strategy
+
+- `Tests` runs linting, unit tests, and documentation builds.
+- `Verify` compares GitKat output against `git-filter-repo` and optionally BFG.
+- CI is the authoritative validation for rewrite parity.
+
+## Verification tools
 
 - `git-filter-repo` validates rewrite equivalence.
-- BFG Repo-Cleaner (plus Java) validates blob-only rewrites when running `gk verify-rewrite --with-bfg`.
+- BFG Repo-Cleaner (with Java) validates blob-only rewrites.
+
+## Code style
+
+- Keep CLI output consistent and human-readable.
+- Avoid breaking changes to rewrite semantics without updating docs and verification.
+- Keep docs and README in sync with behavior changes.

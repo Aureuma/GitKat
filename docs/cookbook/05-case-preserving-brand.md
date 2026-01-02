@@ -2,15 +2,15 @@
 
 <div class="cookbook-meta">
   <span class="level-badge level-intermediate">Intermediate</span>
-  <code>Repo: rust-lang/rustlings</code>
-  <code>Size: medium</code>
+  <code>Repo: serde-rs/serde</code>
+  <code>Size: large</code>
 </div>
 
-You are running a workshop fork and need to rename the product while keeping the original casing (RUSTLINGS, Rustlings, rustlings).
+A brand rename appears in multiple casings. You want to keep the casing of existing text.
 
 ## Goal
 
-Replace every case variant of a name while preserving the original casing style.
+Replace text while preserving case of the original matches.
 
 ## Steps
 
@@ -18,19 +18,14 @@ Replace every case variant of a name while preserving the original casing style.
 mkdir -p ~/scratch/gitkat-cookbook
 cd ~/scratch/gitkat-cookbook
 
-git clone https://github.com/rust-lang/rustlings.git
-cd rustlings
+git clone https://github.com/serde-rs/serde.git
+cd serde
 
-# See where the word appears before changing history
-
-git grep -n "rustlings" | head -n 20
-
-# Rename with case preservation
-
-gk rewrite -m "rustlings:rustcamp" --ignore-case --preserve-case
+gk rewrite -m "OldBrand:NewBrand" --ignore-case --preserve-case
 ```
 
 ## Notes
 
-- Keep the replacement in lowercase; `--preserve-case` will adapt it to the matched case.
-- Use `-x` to skip large directories if the repo is heavy.
+- `--ignore-case` matches every casing.
+- `--preserve-case` mirrors the casing of each match.
+- Combine with `--rename-files` if you also want path changes.

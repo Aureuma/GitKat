@@ -2,34 +2,32 @@
 
 <div class="cookbook-meta">
   <span class="level-badge level-intermediate">Intermediate</span>
-  <code>Repo: multiple</code>
-  <code>Size: mixed</code>
+  <code>Repo: many</code>
+  <code>Size: varies</code>
 </div>
 
-You manage several small repos that all need the same URL update. Run one command from the parent folder.
+You have a directory with many repos and want to apply the same rewrite to each.
 
 ## Goal
 
-Apply a single mapping across every Git repo under a directory.
+Run a single command to rewrite each child repo in place.
 
 ## Steps
 
 ```sh
-mkdir -p ~/scratch/gitkat-cookbook/bulk
-cd ~/scratch/gitkat-cookbook/bulk
+cd ~/workspaces/company-repos
 
-git clone https://github.com/octocat/Hello-World.git
+gk rewrite -m olddomain.com:newdomain.com --ignore-case --preserve-case
+```
 
-git clone https://github.com/githubtraining/hellogitworld.git
+After verifying, push all repos:
 
-git clone https://github.com/github/gitignore.git
-
-# Run once from the parent; GitKat finds all child repos
-
-gk rewrite -m "http://:https://" --ignore-case
+```sh
+gk push
 ```
 
 ## Notes
 
-- GitKat scans child directories for .git folders when run from a parent.
-- Use this for fleets of repos when the change is consistent.
+- GitKat rewrites direct child repos of the current directory.
+- Run inside a repo to target just that repo.
+- Always verify before force-pushing.

@@ -2,31 +2,24 @@
 
 <div class="cookbook-meta">
   <span class="level-badge level-intermediate">Intermediate</span>
-  <code>Repo: denoland/deno</code>
-  <code>Size: large</code>
+  <code>Repo: any</code>
+  <code>Size: medium</code>
 </div>
 
-You want every historical reference to point to a new config template name.
+A repo uses inconsistent config template names (for example, `.env.example`).
 
 ## Goal
 
-Rename a config template file and update references everywhere.
+Rename template files across history and update references.
 
 ## Steps
 
 ```sh
-mkdir -p ~/scratch/gitkat-cookbook
-cd ~/scratch/gitkat-cookbook
-
-git clone https://github.com/denoland/deno.git
-cd deno
-
-# Rename a template file name (adjust to match your repo)
-
-gk rewrite --rename-files -m "example.env:sample.env" --ignore-case
+# Rename .env.example to .env.template
+gk rewrite -m ".env.example:.env.template" --rename-files
 ```
 
 ## Notes
 
-- The same mapping updates file content, so references stay in sync.
-- For large repos, add -x excludes for vendor or build directories.
+- Use `-m` mappings to update references in documentation as well.
+- If you only want to rename paths, do not include other mappings.
