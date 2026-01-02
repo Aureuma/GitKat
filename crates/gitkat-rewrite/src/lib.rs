@@ -652,10 +652,8 @@ fn rewrite_tree(
         let mut path_str = String::from_utf8_lossy(path_bytes).to_string();
         if let Some(delete_set) = &options.delete_set {
             if delete_set.is_match(path_str.as_str()) {
-                if options.log_changes {
-                    if cache.logged_deletes.insert(path_str.clone()) {
-                        log_delete(&path_str);
-                    }
+                if options.log_changes && cache.logged_deletes.insert(path_str.clone()) {
+                    log_delete(&path_str);
                 }
                 editor.remove(BString::from(path_bytes))?;
                 changed = true;
