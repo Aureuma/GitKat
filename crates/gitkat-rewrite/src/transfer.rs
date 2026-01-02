@@ -1,7 +1,8 @@
 use std::collections::HashSet;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Context, Result};
 use gix::bstr::BString;
@@ -15,11 +16,104 @@ const EXPORT_HEADER: &str = "gix-fast-export-1";
 const END_REFS: &str = "end-refs";
 const END_OBJECTS: &str = "end-objects";
 const LOG_MESSAGE: &str = "gix-import";
+const OBJECT_PROGRESS_INTERVAL: Duration = Duration::from_millis(200);
 
 #[derive(Clone, Debug)]
 struct ExportRef {
     name: String,
     target: ObjectId,
+}
+
+struct ObjectProgress {
+    label: &'static str,
+    total: Option<usize>,
+    commits: usize,
+    trees: usize,
+    blobs: usize,
+    tags: usize,
+    last_emit: Instant,
+    last_len: usize,
+    enabled: bool,
+}
+
+impl ObjectProgress {
+    fn new(label: &'static str, total: Option<usize>, enabled: bool) -> Self {
+        Self {
+            label,
+            total,
+            commits: 0,
+            trees: 0,
+            blobs: 0,
+            tags: 0,
+            last_emit: Instant::now() - OBJECT_PROGRESS_INTERVAL,
+            last_len: 0,
+            enabled,
+        }
+    }
+
+    fn start(&mut self) {
+        self.render(true);
+    }
+
+    fn bump(&mut self, kind: ObjectKind) {
+        match kind {
+            ObjectKind::Commit => self.commits += 1,
+            ObjectKind::Tree => self.trees += 1,
+            ObjectKind::Blob => self.blobs += 1,
+            ObjectKind::Tag => self.tags += 1,
+        }
+        self.render(false);
+    }
+
+    fn finish(&mut self) {
+        self.render(true);
+        if self.enabled {
+            let mut stderr = io::stderr();
+            let _ = stderr.write_all(b"\n");
+            let _ = stderr.flush();
+        }
+    }
+
+    fn total_done(&self) -> usize {
+        self.commits + self.trees + self.blobs + self.tags
+    }
+
+    fn render(&mut self, force: bool) {
+        if !self.enabled {
+            return;
+        }
+        let now = Instant::now();
+        if !force && now.duration_since(self.last_emit) < OBJECT_PROGRESS_INTERVAL {
+            return;
+        }
+        let done = self.total_done();
+        let line = if let Some(total) = self.total {
+            let percent = if total == 0 {
+                100
+            } else {
+                (done.saturating_mul(100)) / total
+            };
+            format!(
+                "{}: {}/{} ({}%) commits:{} trees:{} blobs:{} tags:{}",
+                self.label, done, total, percent, self.commits, self.trees, self.blobs, self.tags
+            )
+        } else {
+            format!(
+                "{}: {} objects (commits:{} trees:{} blobs:{} tags:{})",
+                self.label, done, self.commits, self.trees, self.blobs, self.tags
+            )
+        };
+        let mut padded = line;
+        if padded.len() < self.last_len {
+            padded.push_str(&" ".repeat(self.last_len - padded.len()));
+        }
+        let mut stderr = io::stderr();
+        let _ = stderr.write_all(b"\r");
+        let _ = stderr.write_all(padded.as_bytes());
+        let _ = stderr.flush();
+        self.last_len = padded.len();
+        self.last_emit = now;
+    }
 }
 
 pub fn gix_export(repo_path: &std::path::Path, mut out: impl Write) -> Result<()> {
@@ -30,6 +124,12 @@ pub fn gix_export(repo_path: &std::path::Path, mut out: impl Write) -> Result<()
     refs.sort_by(|a, b| a.name.cmp(&b.name));
 
     let objects = collect_objects(&repo, &workdir, &refs)?;
+    let mut progress = ObjectProgress::new(
+        "Exported",
+        Some(objects.len()),
+        io::stderr().is_terminal(),
+    );
+    progress.start();
 
     writeln!(out, "{EXPORT_HEADER}")?;
     for export_ref in &refs {
@@ -39,11 +139,13 @@ pub fn gix_export(repo_path: &std::path::Path, mut out: impl Write) -> Result<()
 
     for oid in objects {
         let (kind, data) = load_object(&repo, &workdir, oid)?;
-        let kind = object_kind_label(kind)?;
-        writeln!(out, "object {} {} {}", oid, kind, data.len())?;
+        let kind_label = object_kind_label(kind)?;
+        writeln!(out, "object {} {} {}", oid, kind_label, data.len())?;
         out.write_all(&data)?;
         out.write_all(b"\n")?;
+        progress.bump(kind);
     }
+    progress.finish();
     writeln!(out, "{END_OBJECTS}")?;
     Ok(())
 }
@@ -77,6 +179,10 @@ pub fn gix_import(repo_path: &std::path::Path, input: impl Read) -> Result<()> {
         refs.push(export_ref);
     }
 
+    let mut progress =
+        ObjectProgress::new("Imported", None, io::stderr().is_terminal());
+    progress.start();
+
     loop {
         line.clear();
         let read = reader.read_line(&mut line)?;
@@ -101,7 +207,9 @@ pub fn gix_import(repo_path: &std::path::Path, input: impl Read) -> Result<()> {
                 "Object id mismatch for {expected_id}: wrote {actual_id}"
             ));
         }
+        progress.bump(kind);
     }
+    progress.finish();
 
     repo.committer_or_set_generic_fallback()?;
     for export_ref in refs {
