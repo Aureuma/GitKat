@@ -124,11 +124,8 @@ pub fn gix_export(repo_path: &std::path::Path, mut out: impl Write) -> Result<()
     refs.sort_by(|a, b| a.name.cmp(&b.name));
 
     let objects = collect_objects(&repo, &workdir, &refs)?;
-    let mut progress = ObjectProgress::new(
-        "Exported",
-        Some(objects.len()),
-        io::stderr().is_terminal(),
-    );
+    let mut progress =
+        ObjectProgress::new("Exported", Some(objects.len()), io::stderr().is_terminal());
     progress.start();
 
     writeln!(out, "{EXPORT_HEADER}")?;
@@ -179,8 +176,7 @@ pub fn gix_import(repo_path: &std::path::Path, input: impl Read) -> Result<()> {
         refs.push(export_ref);
     }
 
-    let mut progress =
-        ObjectProgress::new("Imported", None, io::stderr().is_terminal());
+    let mut progress = ObjectProgress::new("Imported", None, io::stderr().is_terminal());
     progress.start();
 
     loop {
