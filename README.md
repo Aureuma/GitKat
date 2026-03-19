@@ -74,7 +74,7 @@ gk report .
 
 ### `gk push`
 
-Force-push the current branch of each child repo to `origin`.
+Force-push the current branch and tags of each child repo to `origin`.
 
 ```sh
 gk push

@@ -24,7 +24,7 @@ Output is per repo, with one email per line.
 
 ## gk push
 
-Force-push the current branch of each child repo to `origin`. Detached HEADs are skipped.
+Force-push the current branch and tags of each child repo to `origin`. Detached HEADs are skipped.
 
 ```sh
 gk push

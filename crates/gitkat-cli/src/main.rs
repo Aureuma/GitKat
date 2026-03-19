@@ -203,7 +203,7 @@ fn run_push(base_dir: Option<&Path>) -> Result<i32> {
     }
 
     println!(
-        "== Force-pushing current branches of all repos in {} ==",
+        "== Force-pushing current branches and tags of all repos in {} ==",
         base.display()
     );
     for repo in repos {
@@ -220,13 +220,19 @@ fn run_push(base_dir: Option<&Path>) -> Result<i32> {
             continue;
         }
         println!("  Detected branch: {}", branch);
-        println!("  Force pushing to origin...");
-        run_git_status(["push", "-f", "origin", branch], &repo)?;
+        println!("  Force pushing branch and tags to origin...");
+        push_repo(&repo, branch)?;
     }
 
     println!("--------------------------------------------");
     println!("All repos processed.");
     Ok(0)
+}
+
+fn push_repo(repo: &Path, branch: &str) -> Result<()> {
+    run_git_status(["push", "-f", "origin", branch], repo)?;
+    run_git_status(["push", "-f", "--tags", "origin"], repo)?;
+    Ok(())
 }
 
 fn run_rewrite(args: RewriteArgs, base_dir: Option<&Path>) -> Result<i32> {
@@ -676,6 +682,71 @@ where
             String::from_utf8_lossy(&output.stdout).to_string()
         }
         _ => String::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    fn init_repo(repo: &Path) -> Result<()> {
+        fs::create_dir_all(repo)?;
+        run_git(["init", "-b", "main"], repo, true)?;
+        run_git(["config", "user.name", "Test User"], repo, true)?;
+        run_git(["config", "user.email", "test@example.com"], repo, true)?;
+        Ok(())
+    }
+
+    #[test]
+    fn push_repo_force_pushes_branch_and_tags() -> Result<()> {
+        let temp = TempDir::new()?;
+        let remote = temp.path().join("remote.git");
+        let local = temp.path().join("local");
+
+        run_git(
+            ["init", "--bare", remote.to_str().unwrap()],
+            temp.path(),
+            true,
+        )?;
+        init_repo(&local)?;
+        run_git(
+            ["remote", "add", "origin", remote.to_str().unwrap()],
+            &local,
+            true,
+        )?;
+
+        fs::write(local.join("README.md"), "v1\n")?;
+        run_git(["add", "README.md"], &local, true)?;
+        run_git(["commit", "-m", "initial"], &local, true)?;
+        run_git(["tag", "-a", "v1.0.0", "-m", "release"], &local, true)?;
+
+        push_repo(&local, "main")?;
+
+        let remote_head = git_output(["rev-parse", "main"], &remote)?;
+        let local_head = git_output(["rev-parse", "HEAD"], &local)?;
+        assert_eq!(remote_head.trim(), local_head.trim());
+
+        let remote_tag = git_output(["rev-parse", "refs/tags/v1.0.0"], &remote)?;
+        let local_tag = git_output(["rev-parse", "refs/tags/v1.0.0"], &local)?;
+        assert_eq!(remote_tag.trim(), local_tag.trim());
+
+        fs::write(local.join("README.md"), "v2\n")?;
+        run_git(["commit", "-am", "update"], &local, true)?;
+        run_git(["tag", "-fa", "v1.0.0", "-m", "retag"], &local, true)?;
+
+        push_repo(&local, "main")?;
+
+        let remote_head = git_output(["rev-parse", "main"], &remote)?;
+        let local_head = git_output(["rev-parse", "HEAD"], &local)?;
+        assert_eq!(remote_head.trim(), local_head.trim());
+
+        let remote_tag = git_output(["rev-parse", "refs/tags/v1.0.0"], &remote)?;
+        let local_tag = git_output(["rev-parse", "refs/tags/v1.0.0"], &local)?;
+        assert_eq!(remote_tag.trim(), local_tag.trim());
+
+        Ok(())
     }
 }
 
