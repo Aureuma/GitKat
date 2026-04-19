@@ -88,11 +88,7 @@ impl ObjectProgress {
         }
         let done = self.total_done();
         let line = if let Some(total) = self.total {
-            let percent = if total == 0 {
-                100
-            } else {
-                (done.saturating_mul(100)) / total
-            };
+            let percent = done.saturating_mul(100).checked_div(total).unwrap_or(100);
             format!(
                 "{}: {}/{} ({}%) commits:{} trees:{} blobs:{} tags:{}",
                 self.label, done, total, percent, self.commits, self.trees, self.blobs, self.tags

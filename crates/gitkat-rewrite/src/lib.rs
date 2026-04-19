@@ -81,11 +81,11 @@ impl Progress {
         {
             return;
         }
-        let percent = if self.total == 0 {
-            100
-        } else {
-            (self.done * 100) / self.total
-        };
+        let percent = self
+            .done
+            .saturating_mul(100)
+            .checked_div(self.total)
+            .unwrap_or(100);
         let line = format!(
             "Rewriting commits: {}/{} ({}%)",
             self.done, self.total, percent

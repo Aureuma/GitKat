@@ -1,6 +1,6 @@
 [package]
 name = "gitkat"
-version = "0.5.2"
+version = "0.5.3"
 edition = "2021"
 description = "GitKat: bulk Git repository utilities"
 license = "MIT"
