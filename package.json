@@ -1,6 +1,6 @@
 {
   "name": "@aureuma/gitkat",
-  "version": "0.5.2",
+  "version": "0.5.4",
   "description": "GitKat CLI (Rust binary)",
   "license": "MIT",
   "bin": {

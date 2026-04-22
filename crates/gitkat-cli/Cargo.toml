@@ -1,6 +1,6 @@
 [package]
 name = "gitkat"
-version = "0.5.3"
+version = "0.5.4"
 edition = "2021"
 description = "GitKat: bulk Git repository utilities"
 license = "MIT"
@@ -14,7 +14,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
-gitkat-rewrite = { version = "0.5.2", path = "../gitkat-rewrite" }
+gitkat-rewrite = { version = "0.5.4", path = "../gitkat-rewrite" }
 regex = "1.10"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 serde = { version = "1.0", features = ["derive"] }
