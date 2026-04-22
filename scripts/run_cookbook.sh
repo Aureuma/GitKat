@@ -147,7 +147,7 @@ recipe_10() {
     "$GK_BIN" rewrite \
       -x "deps/**" \
       -x "test/fixtures/**" \
-      -m "http://nodejs.org:https://nodejs.org" \
+      -m "http\\://nodejs.org:https\\://nodejs.org" \
       --ignore-case
   )
 }
@@ -160,7 +160,7 @@ recipe_11() {
   clone_repo "https://github.com/github/gitignore.git" "$parent/gitignore"
   (
     cd "$parent"
-    "$GK_BIN" rewrite -m "http://:https://" --ignore-case
+    "$GK_BIN" rewrite -m "http\\://:https\\://" --ignore-case
   )
 }
 
@@ -238,9 +238,9 @@ recipe_19() {
   clone_repo "https://github.com/Homebrew/brew.git" "$repo"
   (
     cd "$repo"
-    "$GK_BIN" rewrite \
+      "$GK_BIN" rewrite \
       -m "git@corp.example.com:git@github.com" \
-      -m "https://corp.example.com/:https://github.com/" \
+      -m "https\\://corp.example.com/:https\\://github.com/" \
       --ignore-case
   )
 }

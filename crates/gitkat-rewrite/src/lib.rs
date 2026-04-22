@@ -1347,6 +1347,26 @@ mod tests {
     }
 
     #[test]
+    fn mapping_handles_url_literals() {
+        let config = RewriteConfig {
+            blob_map: vec!["http\\://nodejs.org:https\\://nodejs.org".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "Visit http://nodejs.org/docs");
+        assert_eq!(output, "Visit https://nodejs.org/docs");
+    }
+
+    #[test]
+    fn mapping_handles_protocol_only_rewrite() {
+        let config = RewriteConfig {
+            blob_map: vec!["http\\://:https\\://".to_string()],
+            ..Default::default()
+        };
+        let output = apply_map(config, "http://example.com");
+        assert_eq!(output, "https://example.com");
+    }
+
+    #[test]
     fn mapping_unescapes_backslash() {
         let config = RewriteConfig {
             blob_map: vec!["foo\\\\bar:baz".to_string()],
