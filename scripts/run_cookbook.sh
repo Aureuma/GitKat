@@ -25,6 +25,12 @@ fi
 WORK_DIR="${WORK_DIR:-${PWD}/target/cookbook}"
 mkdir -p "$WORK_DIR"
 
+quiet_in_ci() {
+  if [[ "${CI:-}" == "true" ]]; then
+    printf '%s\n' "--quiet"
+  fi
+}
+
 clone_repo() {
   local url="$1"
   local dest="$2"
@@ -33,7 +39,11 @@ clone_repo() {
     return 0
   fi
 
-  git clone "$url" "$dest"
+  git clone $(quiet_in_ci) "$url" "$dest"
+}
+
+run_rewrite() {
+  "$GK_BIN" rewrite $(quiet_in_ci) "$@"
 }
 
 recipe_01() {
@@ -62,7 +72,7 @@ recipe_03() {
   (
     cd "$repo"
     "$GK_BIN" report .
-    "$GK_BIN" rewrite -o "old@example.com" -e "new@example.com" -n "New Name"
+    run_rewrite -o "old@example.com" -e "new@example.com" -n "New Name"
   )
 }
 
@@ -72,7 +82,7 @@ recipe_04() {
   (
     cd "$repo"
     git log -p -S "TOKEN" | head -n 40 || true
-    "$GK_BIN" rewrite -m "TOKEN:[redacted]" -m "SECRET:[redacted]"
+    run_rewrite -m "TOKEN:[redacted]" -m "SECRET:[redacted]"
   )
 }
 
@@ -82,7 +92,7 @@ recipe_05() {
   (
     cd "$repo"
     git grep -n "rustlings" | head -n 20 || true
-    "$GK_BIN" rewrite -m "rustlings:rustcamp" --ignore-case --preserve-case
+    run_rewrite -m "rustlings:rustcamp" --ignore-case --preserve-case
   )
 }
 
@@ -92,7 +102,7 @@ recipe_06() {
   (
     cd "$repo"
     git ls-files | grep -E '\\.env($|\\.)' || true
-    "$GK_BIN" rewrite \
+    run_rewrite \
       --delete-path ".env" \
       --delete-path ".env.local" \
       --delete-path "**/.env" \
@@ -106,7 +116,7 @@ recipe_07() {
   (
     cd "$repo"
     git ls-files | grep -E '/(dist|build)/' | head -n 20 || true
-    "$GK_BIN" rewrite \
+    run_rewrite \
       --delete-path "**/dist/**" \
       --delete-path "**/build/**" \
       --delete-path "**/*.map"
@@ -119,7 +129,7 @@ recipe_08() {
   (
     cd "$repo"
     git ls-files docs | head -n 20 || true
-    "$GK_BIN" rewrite \
+    run_rewrite \
       --rename-files \
       -m "docs/changelog:docs/releases" \
       -m "docs/changelog.md:docs/releases.md"
@@ -132,7 +142,7 @@ recipe_09() {
   (
     cd "$repo"
     git log -p -S "AKIA" | head -n 40 || true
-    "$GK_BIN" rewrite \
+    run_rewrite \
       --regex \
       -m "AKIA[0-9A-Z]{16}:[redacted]" \
       -m "sk_live_[0-9a-zA-Z]{24}:[redacted]"
@@ -144,7 +154,7 @@ recipe_10() {
   clone_repo "https://github.com/nodejs/node.git" "$repo"
   (
     cd "$repo"
-    "$GK_BIN" rewrite \
+    run_rewrite \
       -x "deps/**" \
       -x "test/fixtures/**" \
       -m "http\\://nodejs.org:https\\://nodejs.org" \
@@ -160,7 +170,7 @@ recipe_11() {
   clone_repo "https://github.com/github/gitignore.git" "$parent/gitignore"
   (
     cd "$parent"
-    "$GK_BIN" rewrite -m "http\\://:https\\://" --ignore-case
+    run_rewrite -m "http\\://:https\\://" --ignore-case
   )
 }
 
@@ -170,7 +180,7 @@ recipe_12() {
   (
     cd "$repo"
     git ls-files | grep -E '\\.csv$' | head -n 20 || true
-    "$GK_BIN" rewrite --delete-path "**/*.csv"
+    run_rewrite --delete-path "**/*.csv"
   )
 }
 
@@ -180,7 +190,7 @@ recipe_13() {
   (
     cd "$repo"
     git grep -n "\\.jpeg" | head -n 20 || true
-    "$GK_BIN" rewrite --rename-files -m ".jpeg:.jpg" --ignore-case
+    run_rewrite --rename-files -m ".jpeg:.jpg" --ignore-case
   )
 }
 
@@ -189,7 +199,7 @@ recipe_14() {
   clone_repo "https://github.com/hashicorp/terraform.git" "$repo"
   (
     cd "$repo"
-    "$GK_BIN" rewrite -m "corp.internal:example.com" --ignore-case
+    run_rewrite -m "corp.internal:example.com" --ignore-case
   )
 }
 
@@ -199,7 +209,7 @@ recipe_15() {
   (
     cd "$repo"
     "$GK_BIN" report .
-    "$GK_BIN" rewrite -o "old@example.com" -e "new@example.com" -n "New Name"
+    run_rewrite -o "old@example.com" -e "new@example.com" -n "New Name"
   )
 }
 
@@ -208,7 +218,7 @@ recipe_16() {
   clone_repo "https://github.com/facebook/react.git" "$repo"
   (
     cd "$repo"
-    "$GK_BIN" rewrite \
+    run_rewrite \
       --delete-path "**/.DS_Store" \
       --delete-path "**/.idea/**"
   )
@@ -219,7 +229,7 @@ recipe_17() {
   clone_repo "https://github.com/google/googletest.git" "$repo"
   (
     cd "$repo"
-    "$GK_BIN" rewrite --regex \
+    run_rewrite --regex \
       -m $'By\\: Shayan Amani\\n\\nFeel free to PR\\. \\:heart_eyes\\::[redacted]'
   )
 }
@@ -229,7 +239,7 @@ recipe_18() {
   clone_repo "https://github.com/denoland/deno.git" "$repo"
   (
     cd "$repo"
-    "$GK_BIN" rewrite --rename-files -m "example.env:sample.env" --ignore-case
+    run_rewrite --rename-files -m "example.env:sample.env" --ignore-case
   )
 }
 
@@ -238,7 +248,7 @@ recipe_19() {
   clone_repo "https://github.com/Homebrew/brew.git" "$repo"
   (
     cd "$repo"
-      "$GK_BIN" rewrite \
+      run_rewrite \
       -m "git@corp.example.com:git@github.com" \
       -m "https\\://corp.example.com/:https\\://github.com/" \
       --ignore-case
