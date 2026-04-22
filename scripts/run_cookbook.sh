@@ -34,12 +34,17 @@ quiet_in_ci() {
 clone_repo() {
   local url="$1"
   local dest="$2"
+  local -a args=()
 
   if [[ -d "$dest/.git" ]]; then
     return 0
   fi
 
-  git clone $(quiet_in_ci) "$url" "$dest"
+  if [[ "${CI:-}" == "true" ]]; then
+    args+=(--quiet)
+  fi
+
+  git clone "${args[@]}" "$url" "$dest"
 }
 
 run_rewrite() {
@@ -150,8 +155,8 @@ recipe_09() {
 }
 
 recipe_10() {
-  local repo="$WORK_DIR/10-node"
-  clone_repo "https://github.com/nodejs/node.git" "$repo"
+  local repo="$WORK_DIR/10-node-build"
+  clone_repo "https://github.com/nodejs/build.git" "$repo"
   (
     cd "$repo"
     run_rewrite \

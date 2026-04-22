@@ -497,7 +497,7 @@ dependencies = [
 
 [[package]]
 name = "gitkat"
-version = "0.5.6"
+version = "0.5.7"
 dependencies = [
  "anyhow",
  "clap",
@@ -512,7 +512,7 @@ dependencies = [
 
 [[package]]
 name = "gitkat-rewrite"
-version = "0.5.6"
+version = "0.5.7"
 dependencies = [
  "anyhow",
  "clap",
