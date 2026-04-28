@@ -16,4 +16,5 @@ dist/
 site/
 book/
 target/
+.artifacts/
 node_modules/

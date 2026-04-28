@@ -32,7 +32,10 @@ jobs:
         group: [group1, group2, group3, group4]
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.94.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> .artifacts/cargo-target
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -42,6 +45,6 @@ jobs:
         run: cargo build --release -p gitkat
       - name: Run cookbook recipes
         env:
-          GK_BIN: ${{ github.workspace }}/target/release/gk
+          GK_BIN: ${{ github.workspace }}/.artifacts/cargo-target/release/gk
           WORK_DIR: ${{ runner.temp }}/gitkat-cookbook
         run: scripts/run_cookbook.sh ${{ matrix.group }}

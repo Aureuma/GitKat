@@ -40,9 +40,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.94.0
         with:
           targets: ${{ matrix.target }}
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> .artifacts/cargo-target
 
       - name: Set up cross
         if: matrix.use_cross == true
@@ -71,7 +75,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p dist
-          BIN="target/${{ matrix.target }}/release/gk"
+          BIN=".artifacts/cargo-target/${{ matrix.target }}/release/gk"
           ARCHIVE="dist/gitkat-v${VERSION}-${{ matrix.target }}.tar.gz"
           tar -czf "$ARCHIVE" -C "$(dirname "$BIN")" gk
 
@@ -81,7 +85,7 @@ jobs:
         run: |
           $version = $env:GITHUB_REF_NAME.TrimStart('v')
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $bin = "target/${{ matrix.target }}/release/gk.exe"
+          $bin = ".artifacts/cargo-target/${{ matrix.target }}/release/gk.exe"
           $archive = Join-Path $pwd ("dist/gitkat-v$version-${{ matrix.target }}.zip")
           $binDir = Split-Path -Parent $bin
           Push-Location $binDir
@@ -100,7 +104,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.94.0
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> .artifacts/cargo-target
       - name: Publish rewrite crate
         run: |
           set -euo pipefail
