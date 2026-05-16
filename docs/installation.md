@@ -20,7 +20,7 @@ brew tap Aureuma/gitkat
 brew install gitkat
 
 # npm
-npm install -g @aureuma/gitkat
+corepack pnpm install -g @aureuma/gitkat
 
 # pipx (recommended)
 pipx install gitkat

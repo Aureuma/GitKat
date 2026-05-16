@@ -176,6 +176,6 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Publish to npm
         if: env.NPM_TOKEN != ''
-        run: npm publish --access public
+        run: corepack pnpm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
