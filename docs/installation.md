@@ -19,7 +19,7 @@ cargo install gitkat --locked
 brew tap Aureuma/gitkat
 brew install gitkat
 
-# npm
+# pnpm
 corepack pnpm install -g @aureuma/gitkat
 
 # pipx (recommended)

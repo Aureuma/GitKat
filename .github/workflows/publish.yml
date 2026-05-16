@@ -161,7 +161,7 @@ jobs:
         with:
           skip-existing: true
 
-  publish-npm:
+  publish-package:
     runs-on: ubuntu-latest
     needs: build-assets
     env:
@@ -174,7 +174,7 @@ jobs:
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
-      - name: Publish to npm
+      - name: Publish package
         if: env.NPM_TOKEN != ''
         run: corepack pnpm publish --access public
         env:

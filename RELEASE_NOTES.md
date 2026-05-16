@@ -6,7 +6,7 @@ Highlights:
 - Rust-only `gk` CLI with the same commands as before.
 - Rewrite engine implemented in-process via gitoxide.
 - Verification harness that compares rewrites against `git-filter-repo`.
-- Installers for crates.io, Homebrew, npm, and PyPI (wrappers download the Rust binary).
+- Installers for crates.io, Homebrew, pnpm, and PyPI (wrappers download the Rust binary).
 
 Upgrade notes:
 - Install/build with `cargo install gitkat` or `cargo build --release`.

@@ -4,7 +4,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-Aureuma/GitKat-181717?logo=github&logoColor=white)](https://github.com/Aureuma/GitKat)
 [![crates.io](https://img.shields.io/crates/v/gitkat.svg?logo=rust)](https://crates.io/crates/gitkat)
 [![Homebrew](https://img.shields.io/badge/Homebrew-Aureuma%2Fgitkat-FBB040?logo=homebrew&logoColor=black)](https://github.com/Aureuma/GitKat/blob/main/Formula/gitkat.rb)
-[![npm](https://img.shields.io/npm/v/@aureuma/gitkat?logo=npm)](https://www.npmjs.com/package/@aureuma/gitkat)
+
 [![PyPI](https://img.shields.io/pypi/v/gitkat?logo=pypi&logoColor=white)](https://pypi.org/project/gitkat/)
 
 GitKat is a Rust CLI for bulk Git repository maintenance. It focuses on fast, repeatable workflows for identity cleanup, content redaction, and repository audits across many repos.
@@ -28,7 +28,7 @@ cargo install gitkat --locked
 brew tap Aureuma/gitkat
 brew install gitkat
 
-# npm
+# pnpm
 corepack pnpm install -g @aureuma/gitkat
 
 # pipx (recommended)
@@ -38,7 +38,7 @@ pipx install gitkat
 python -m pip install gitkat
 ```
 
-The pip/npm wrappers download the Rust binary from GitHub Releases on first run.
+The pip/pnpm wrappers download the Rust binary from GitHub Releases on first run.
 
 ## Quick start
 
