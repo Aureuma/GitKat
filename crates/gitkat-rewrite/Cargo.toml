@@ -1,6 +1,6 @@
 [package]
 name = "gitkat-rewrite"
-version = "0.5.10"
+version = "0.5.11"
 edition = "2021"
 rust-version = "1.94"
 description = "GitKat git history rewrite engine built on gitoxide"
