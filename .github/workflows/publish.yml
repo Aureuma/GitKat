@@ -12,6 +12,9 @@ permissions:
   contents: write
   id-token: write
 
+env:
+  CARGO_BUILD_JOBS: 2
+
 jobs:
   build-assets:
     runs-on: ${{ matrix.os }}

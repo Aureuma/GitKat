@@ -17,6 +17,7 @@ permissions:
   contents: read
 
 env:
+  CARGO_BUILD_JOBS: 2
   CARGO_TERM_COLOR: always
   GIT_TERMINAL_PROMPT: "0"
   GIT_LFS_SKIP_SMUDGE: "1"
