@@ -62,15 +62,15 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.use_cross }}" = "true" ]; then
-            cross build --release -p gitkat --target ${{ matrix.target }}
+            cross build --jobs 2 --release -p gitkat --target ${{ matrix.target }}
           else
-            cargo build --release -p gitkat --target ${{ matrix.target }}
+            cargo build --jobs 2 --release -p gitkat --target ${{ matrix.target }}
           fi
 
       - name: Build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: cargo build --release -p gitkat --target ${{ matrix.target }}
+        run: cargo build --jobs 2 --release -p gitkat --target ${{ matrix.target }}
 
       - name: Package (Unix)
         if: runner.os != 'Windows'

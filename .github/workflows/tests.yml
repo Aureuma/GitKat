@@ -42,7 +42,7 @@ jobs:
         with:
           workspaces: . -> .artifacts/cargo-target
       - name: Run tests
-        run: cargo test --workspace --all-targets
+        run: cargo test --workspace --all-targets --test-threads=2
       - name: Build docs
         run: |
           cargo install mdbook --locked
